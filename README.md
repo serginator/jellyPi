@@ -184,12 +184,22 @@ Para activar hardware acceleration (Pi 4):
 - **Dashboard → Playback → Transcoding**
 - Hardware acceleration: `Video4Linux2 (V4L2)`
 
+### Bazarr — `http://jellypi.local:6767`
+
+Descarga subtítulos automáticamente al terminar cada descarga.
+
+1. **Settings → Providers → + → OpenSubtitles.com:** usuario y contraseña de opensubtitles.com
+2. **Settings → Languages → + Add New Profile:** añade `Spanish`, Search only when `Always`. Guarda y márcalo como perfil por defecto en Series y Películas
+3. **Settings → Sonarr:** host `sonarr`, port `8989`, API Key de Sonarr
+4. **Settings → Radarr:** host `radarr`, port `7878`, API Key de Radarr
+5. **Settings → Jellyfin:** host `jellyfin`, port `8096`, API Key de Jellyfin (Dashboard → API Keys → +) — notifica a Jellyfin al descargar subtítulos
+
 ### Jellyseerr — `http://jellypi.local:5055`
 
 1. **Sign in with Jellyfin** usando tus credenciales de Jellyfin
 2. Conecta con Sonarr y Radarr usando sus API Keys y `http://sonarr:8989` / `http://radarr:7878`
 
-Desde ahora buscas aquí lo que quieres ver y se descarga solo.
+Desde ahora buscas aquí lo que quieres ver y se descarga solo con subtítulos en español.
 
 > Si al añadir una serie ves ⚠️ en episodios ya emitidos, pulsa el 🔍 de cada episodio para forzar la búsqueda. Ocurre cuando los indexers aún no están sincronizados con Prowlarr. Las descargas futuras son automáticas.
 
@@ -214,6 +224,7 @@ No necesitas nada más. La Pi no va conectada a la tele.
 | Radarr       | 7878   |
 | Prowlarr     | 9696   |
 | qBittorrent  | 8080   |
+| Bazarr       | 6767   |
 
 ---
 
