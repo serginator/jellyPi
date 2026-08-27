@@ -13,7 +13,8 @@ Media center para Raspberry Pi 4 con descarga automática de series y películas
 - Raspberry Pi 4 (4GB o 8GB)
 - microSD 32GB (High Endurance recomendada: Samsung PRO Endurance o SanDisk High Endurance)
 - Disco duro externo USB de 2TB formateado en ext4
-- Cable ethernet al router
+- Cable ethernet al router (recomendado) o WiFi
+- Hub USB con alimentación propia si el HDD no tiene fuente propia — el HDD consume corriente al arrancar y puede impedir que el Pi conecte al WiFi
 
 ---
 
@@ -59,9 +60,10 @@ Si `jellypi.local` no resuelve, busca la IP del Pi en tu router y usa `ssh pi@<I
 
 ## 3. Setup del sistema
 
-Clona el repositorio en el Pi:
+Instala git e instala el repositorio en el Pi:
 
 ```bash
+sudo apt install -y git
 git clone https://github.com/serginator/jellyPi ~/jellypi
 cd ~/jellypi
 ```
@@ -130,14 +132,11 @@ Credenciales por defecto: `admin` / `adminadmin`
 En **Tools → Options → Downloads:**
 - Default Save Path: `/data/torrents`
 
-Crea dos categorías en **Tools → Options → BitTorrent:**
-
-| Categoría | Ruta de guardado |
-|-----------|-----------------|
-| `tv`      | `/data/torrents/tv` |
-| `movies`  | `/data/torrents/movies` |
+Las categorías `tv` y `movies` las crea Sonarr/Radarr automáticamente al conectarse.
 
 ### Sonarr — `http://jellypi.local:8989`
+
+En el primer acceso activa **Authentication Required → Disabled for Local Addresses** para no tener que hacer login desde la red local.
 
 1. **Settings → Media Management → Root Folders:** añade `/data/media/tv`
 2. **Settings → Download Clients → + → qBittorrent:**
@@ -163,7 +162,17 @@ Crea dos categorías en **Tools → Options → BitTorrent:**
    - Prowlarr Server: `http://prowlarr:9696`
    - Radarr Server: `http://radarr:7878`
    - API Key: la de Radarr
-3. **Indexers → + → Add Indexer:** añade tus indexers de torrent favoritos
+3. **Indexers → + → Add Indexer:** añade tus indexers
+
+Indexers que funcionan bien desde Pi:
+
+| Indexer | Base URL | Para qué |
+|---------|----------|----------|
+| YTS | `https://yts.gg/` | Películas |
+| The Pirate Bay | (primera URL de la lista) | General |
+| Nyaa.si | `https://nyaa.si` | Anime |
+
+> EZTV y 1337x están bloqueados por Cloudflare desde IPs de Pi. En cada indexer elige siempre la primera URL que no sea un proxy (`proxyninja`, `torrentbay`, etc.).
 
 ### Jellyfin — `http://jellypi.local:8096`
 
@@ -181,6 +190,8 @@ Para activar hardware acceleration (Pi 4):
 2. Conecta con Sonarr y Radarr usando sus API Keys y `http://sonarr:8989` / `http://radarr:7878`
 
 Desde ahora buscas aquí lo que quieres ver y se descarga solo.
+
+> Si al añadir una serie ves ⚠️ en episodios ya emitidos, pulsa el 🔍 de cada episodio para forzar la búsqueda. Ocurre cuando los indexers aún no están sincronizados con Prowlarr. Las descargas futuras son automáticas.
 
 ---
 
