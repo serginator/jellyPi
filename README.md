@@ -156,10 +156,12 @@ Crea dos categorías en **Tools → Options → BitTorrent:**
 ### Prowlarr — `http://jellypi.local:9696`
 
 1. **Settings → Apps → + → Sonarr:**
-   - Server: `http://sonarr:8989`
+   - Prowlarr Server: `http://prowlarr:9696`
+   - Sonarr Server: `http://sonarr:8989`
    - API Key: la de Sonarr
 2. **Settings → Apps → + → Radarr:**
-   - Server: `http://radarr:7878`
+   - Prowlarr Server: `http://prowlarr:9696`
+   - Radarr Server: `http://radarr:7878`
    - API Key: la de Radarr
 3. **Indexers → + → Add Indexer:** añade tus indexers de torrent favoritos
 
