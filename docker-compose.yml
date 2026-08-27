@@ -2,6 +2,9 @@ services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -106,6 +109,9 @@ services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       - TZ=${TZ}
     volumes:
