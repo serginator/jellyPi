@@ -87,6 +87,22 @@ services:
     networks:
       - media
 
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${STORAGE}/config/bazarr:/config
+      - ${STORAGE}/data/media:/data/media
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+    networks:
+      - media
+
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
