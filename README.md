@@ -129,6 +129,32 @@ Sustituye `jellypi.local` por la IP del Pi si el hostname no resuelve.
 Credenciales por defecto: `admin` / `adminadmin`  
 (Si no funcionan, mira el log: `docker compose logs qbittorrent | grep password`)
 
+La configuración de conexiones y la UI alternativa (VueTorrent) las aplica `setup.sh` automáticamente antes del primer arranque. Si necesitas ajustar algo manualmente, edita:
+
+```bash
+nano /mnt/storage/config/qbittorrent/qBittorrent/qBittorrent.conf
+docker compose restart qbittorrent
+```
+
+**Límites de red aplicados** (para no saturar el router):
+
+| Parámetro | Valor |
+|-----------|-------|
+| Conexiones globales | 50 |
+| Conexiones por torrent | 10 |
+| Descargas activas | 1 |
+| Seeds activos | 2 |
+| DHT | activado |
+| LSD | desactivado |
+| Ratio máx | 1.0 (pausa al completar) |
+
+**Horario de descarga** — los crons los instala `setup.sh` automáticamente en el usuario principal:
+
+- `01:00` — reanuda todos los torrents
+- `07:00` — pausa todos los torrents
+
+Para gestionar manualmente desde el móvil instala **VueTorrent** (ya incluido) o busca un cliente qBittorrent remoto en Play Store.
+
 En **Tools → Options → Downloads:**
 - Default Save Path: `/data/torrents`
 

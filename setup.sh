@@ -115,6 +115,50 @@ if ! grep -q "gpu_mem=128" "$CONFIG"; then
     echo "gpu_mem=128" >> "$CONFIG"
 fi
 
+# ── 9. VueTorrent ─────────────────────────────────────────────────────────────
+log "Installing VueTorrent..."
+VUETORRENT_ZIP=$(mktemp)
+wget -qO "$VUETORRENT_ZIP" https://github.com/VueTorrent/VueTorrent/releases/latest/download/vuetorrent.zip
+unzip -qo "$VUETORRENT_ZIP" -d "$STORAGE/config/qbittorrent"
+rm "$VUETORRENT_ZIP"
+chown -R 1000:1000 "$STORAGE/config/qbittorrent/vuetorrent"
+
+# ── 10. qBittorrent pre-configuration ─────────────────────────────────────────
+QBT_CONF="$STORAGE/config/qbittorrent/qBittorrent/qBittorrent.conf"
+if [[ ! -f $QBT_CONF ]]; then
+    log "Writing qBittorrent initial config..."
+    mkdir -p "$(dirname "$QBT_CONF")"
+    cat > "$QBT_CONF" <<'QBTEOF'
+[BitTorrent]
+Session\AddTorrentPaused=true
+Session\DHT=true
+Session\LSD=false
+Session\MaxActiveDownloads=1
+Session\MaxActiveSeeds=2
+Session\MaxActiveTorrents=2
+Session\MaxConnections=50
+Session\MaxConnectionsPerTorrent=10
+Session\MaxRatio=1
+Session\MaxRatioAction=1
+Session\PeX=true
+
+[Preferences]
+WebUI\AlternativeUIEnabled=true
+WebUI\LocalHostAuth=false
+WebUI\RootFolder=/config/vuetorrent
+WebUI\SessionTimeout=0
+QBTEOF
+    chown 1000:1000 "$QBT_CONF"
+else
+    warn "qBittorrent config already exists, skipping (edit manually if needed)"
+fi
+
+# ── 11. Cron: pause qBittorrent at 7am, resume at 1am ────────────────────────
+log "Setting up qBittorrent schedule..."
+CRON_PAUSE="0 7 * * * curl -s -d 'hashes=all' http://localhost:8080/api/v2/torrents/pause"
+CRON_RESUME="0 1 * * * curl -s -d 'hashes=all' http://localhost:8080/api/v2/torrents/resume"
+(crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "api/v2/torrents"; echo "$CRON_PAUSE"; echo "$CRON_RESUME") | crontab -u "$MAIN_USER" -
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 IP=$(hostname -I | awk '{print $1}')
 log "Setup complete! Reboot the Pi, then run: docker compose up -d"
