@@ -123,7 +123,7 @@ services:
       - media
 
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:2
     container_name: uptime-kuma
     volumes:
       - ${STORAGE}/config/uptime-kuma:/app/data
@@ -168,7 +168,7 @@ services:
       - media
 
   recyclarr:
-    image: ghcr.io/recyclarr/recyclarr:latest
+    image: ghcr.io/recyclarr/recyclarr:8
     container_name: recyclarr
     environment:
       - TZ=${TZ}
