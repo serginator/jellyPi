@@ -13,4 +13,4 @@ radarr:
     base_url: http://radarr:7878
     api_key: !env_var RADARR_API_KEY
     include:
-      - template: sqp-1-web-1080p
+      - template: hd-bluray-web
