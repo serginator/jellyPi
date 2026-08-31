@@ -285,6 +285,35 @@ Desde ahora buscas aquí lo que quieres ver y se descarga solo con subtítulos e
 
 > Si al añadir una serie ves ⚠️ en episodios ya emitidos, pulsa el 🔍 de cada episodio para forzar la búsqueda. Ocurre cuando los indexers aún no están sincronizados con Prowlarr. Las descargas futuras son automáticas.
 
+### Uptime Kuma — `http://jellypi.local:3001`
+
+Monitoreo de todos los servicios. En el primer arranque elige **SQLite**.
+
+Añade un monitor por cada servicio con tipo **HTTP(s)** y URL interna (nombre de contenedor):
+
+| Servicio | URL |
+|---|---|
+| Jellyfin | `http://jellyfin:8096` |
+| Seerr | `http://seerr:5055` |
+| Sonarr | `http://sonarr:8989` |
+| Radarr | `http://radarr:7878` |
+| Prowlarr | `http://prowlarr:9696` |
+| qBittorrent | `http://qbittorrent:8080` |
+| Bazarr | `http://bazarr:6767` |
+
+### Decluttarr y Unpackerr (sin UI)
+
+Servicios sin interfaz que funcionan en segundo plano. Solo necesitan las variables en `.env`:
+
+```
+SONARR_API_KEY=   # Settings → General → API Key en Sonarr
+RADARR_API_KEY=   # Settings → General → API Key en Radarr
+QBITTORRENT_PASSWORD=   # tu contraseña de qBittorrent
+```
+
+- **Decluttarr** — detecta torrents atascados sin seeds y los elimina de qBittorrent. Bloquea el torrent en Sonarr/Radarr para que busquen otra fuente.
+- **Unpackerr** — extrae ficheros `.rar` automáticamente tras la descarga y notifica a Sonarr/Radarr para importar el contenido.
+
 ---
 
 ## 6. Ver contenido en el Chromecast
@@ -307,6 +336,7 @@ No necesitas nada más. La Pi no va conectada a la tele.
 | Prowlarr     | 9696   |
 | qBittorrent  | 8080   |
 | Bazarr       | 6767   |
+| Uptime Kuma  | 3001   |
 
 ---
 
