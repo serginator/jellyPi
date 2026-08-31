@@ -167,20 +167,6 @@ services:
     networks:
       - media
 
-  recyclarr:
-    image: ghcr.io/recyclarr/recyclarr:8
-    container_name: recyclarr
-    environment:
-      - TZ=${TZ}
-      - CRON_SCHEDULE=@daily
-      - SONARR_API_KEY=${SONARR_API_KEY}
-      - RADARR_API_KEY=${RADARR_API_KEY}
-    volumes:
-      - ./recyclarr:/config
-    restart: unless-stopped
-    networks:
-      - media
-
 networks:
   media:
     driver: bridge
