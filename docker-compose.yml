@@ -106,16 +106,16 @@ services:
     networks:
       - media
 
-  jellyseerr:
-    image: fallenbagel/jellyseerr:latest
-    container_name: jellyseerr
+  seerr:
+    image: seerr/seerr:latest
+    container_name: seerr
     dns:
       - 8.8.8.8
       - 8.8.4.4
     environment:
       - TZ=${TZ}
     volumes:
-      - ${STORAGE}/config/jellyseerr:/app/config
+      - ${STORAGE}/config/seerr:/app/config
     ports:
       - 5055:5055
     restart: unless-stopped

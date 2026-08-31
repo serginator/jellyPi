@@ -40,14 +40,16 @@ log "Creating directory structure..."
 mkdir -p \
     "$STORAGE/data/torrents/movies" \
     "$STORAGE/data/torrents/tv" \
+    "$STORAGE/data/torrents/anime" \
     "$STORAGE/data/media/movies" \
     "$STORAGE/data/media/tv" \
+    "$STORAGE/data/media/anime" \
     "$STORAGE/config/jellyfin" \
     "$STORAGE/config/sonarr" \
     "$STORAGE/config/radarr" \
     "$STORAGE/config/prowlarr" \
     "$STORAGE/config/qbittorrent" \
-    "$STORAGE/config/jellyseerr" \
+    "$STORAGE/config/seerr" \
     "$STORAGE/docker"
 
 chown -R 1000:1000 "$STORAGE"
@@ -139,7 +141,7 @@ Session\MaxActiveTorrents=2
 Session\MaxConnections=50
 Session\MaxConnectionsPerTorrent=10
 Session\MaxRatio=1
-Session\MaxRatioAction=1
+Session\MaxRatioAction=0
 Session\PeX=true
 
 [Preferences]
@@ -153,11 +155,21 @@ else
     warn "qBittorrent config already exists, skipping (edit manually if needed)"
 fi
 
-# ── 11. Cron: pause qBittorrent at 7am, resume at 1am ────────────────────────
+# ── 11. qBittorrent schedule script + cron ────────────────────────────────────
 log "Setting up qBittorrent schedule..."
-CRON_PAUSE="0 7 * * * curl -s -d 'hashes=all' http://localhost:8080/api/v2/torrents/pause"
-CRON_RESUME="0 1 * * * curl -s -d 'hashes=all' http://localhost:8080/api/v2/torrents/resume"
-(crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "api/v2/torrents"; echo "$CRON_PAUSE"; echo "$CRON_RESUME") | crontab -u "$MAIN_USER" -
+REPO_DIR=$(eval echo "~$MAIN_USER/jellypi")
+cat > "$REPO_DIR/qbt.sh" <<'QBTSH'
+#!/bin/bash
+# ponytail: login required — qBittorrent 5.x CSRF protection ignores LocalHostAuth bypass
+SID=$(curl -s -c /tmp/qbt.sid -d 'username=admin&password=adminadmin' http://localhost:8080/api/v2/auth/login)
+curl -s -b /tmp/qbt.sid -d "hashes=all" "http://localhost:8080/api/v2/torrents/$1"
+QBTSH
+chmod +x "$REPO_DIR/qbt.sh"
+chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
+
+CRON_PAUSE="0 7 * * * $REPO_DIR/qbt.sh stop"
+CRON_RESUME="0 1 * * * $REPO_DIR/qbt.sh start"
+(crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "qbt.sh"; echo "$CRON_PAUSE"; echo "$CRON_RESUME") | crontab -u "$MAIN_USER" -
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 IP=$(hostname -I | awk '{print $1}')
