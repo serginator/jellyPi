@@ -2,9 +2,10 @@
 
 Media center para Raspberry Pi 4 con descarga automática de series y películas.
 
-**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr  
+**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr · Tailscale  
 **Acceso en la tele:** App Jellyfin en Chromecast con Google TV  
-**Añadir contenido:** Seerr desde el móvil o portátil
+**Añadir contenido:** Seerr desde el móvil o portátil  
+**Acceso remoto:** Tailscale — disponible desde cualquier sitio sin abrir puertos
 
 ---
 
@@ -301,6 +302,27 @@ Añade un monitor por cada servicio con tipo **HTTP(s)** y URL interna (nombre d
 | qBittorrent | `http://qbittorrent:8080` |
 | Bazarr | `http://bazarr:6767` |
 
+### Tailscale (acceso remoto)
+
+Permite acceder a todos los servicios desde fuera de casa sin abrir puertos en el router. Funciona aunque tu ISP use CGNAT.
+
+Antes de arrancar el contenedor añade en `.env`:
+
+```
+TS_AUTHKEY=tskey-auth-xxxxxxxxxxxx
+```
+
+Genera la key en [tailscale.com/admin/settings/keys](https://tailscale.com/admin/settings/keys) — marca **Reusable**.
+
+```bash
+docker compose up -d tailscale
+docker exec tailscale tailscale status   # verifica que aparece "jellypi"
+```
+
+El Pi aparece como `jellypi` en [tailscale.com/admin/machines](https://tailscale.com/admin/machines) con una IP `100.x.x.x`. Desde fuera accedes a `http://100.x.x.x:8096` para Jellyfin, `100.x.x.x:5055` para Seerr, etc.
+
+Si también usas Tailscale en el trabajo, añade la cuenta personal en la app móvil (**Add another account**) y cambia entre ellas con un tap.
+
 ### Decluttarr y Unpackerr (sin UI)
 
 Servicios sin interfaz que funcionan en segundo plano. Solo necesitan las variables en `.env`:
@@ -337,6 +359,7 @@ No necesitas nada más. La Pi no va conectada a la tele.
 | qBittorrent  | 8080   |
 | Bazarr       | 6767   |
 | Uptime Kuma  | 3001   |
+| Tailscale    | (sin puerto — acceso vía IP Tailscale `100.x.x.x`) |
 
 ---
 
