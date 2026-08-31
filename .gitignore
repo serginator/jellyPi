@@ -1,2 +1,4 @@
 .env
 .notes
+recyclarr/logs/
+recyclarr/cache/

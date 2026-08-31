@@ -122,6 +122,63 @@ services:
     networks:
       - media
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    volumes:
+      - ${STORAGE}/config/uptime-kuma:/app/data
+    ports:
+      - 3001:3001
+    restart: unless-stopped
+    networks:
+      - media
+
+  unpackerr:
+    image: golift/unpackerr:latest
+    container_name: unpackerr
+    environment:
+      - TZ=${TZ}
+      - UN_SONARR_0_URL=http://sonarr:8989
+      - UN_SONARR_0_API_KEY=${SONARR_API_KEY}
+      - UN_RADARR_0_URL=http://radarr:7878
+      - UN_RADARR_0_API_KEY=${RADARR_API_KEY}
+    volumes:
+      - ${STORAGE}/data/torrents:/data/torrents
+    restart: unless-stopped
+    networks:
+      - media
+
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr:latest
+    container_name: decluttarr
+    environment:
+      - TZ=${TZ}
+      - QBITTORRENT_URL=http://qbittorrent:8080
+      - QBITTORRENT_USERNAME=admin
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
+      - SONARR_URL=http://sonarr:8989
+      - SONARR_KEY=${SONARR_API_KEY}
+      - RADARR_URL=http://radarr:7878
+      - RADARR_KEY=${RADARR_API_KEY}
+      - REMOVE_STALLED=true
+      - REMOVE_SLOW=false
+      - PERMITTED_ATTEMPTS=3
+    restart: unless-stopped
+    networks:
+      - media
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    environment:
+      - TZ=${TZ}
+      - CRON_SCHEDULE=@daily
+    volumes:
+      - ./recyclarr:/config
+    restart: unless-stopped
+    networks:
+      - media
+
 networks:
   media:
     driver: bridge

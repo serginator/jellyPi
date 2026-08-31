@@ -1,0 +1,23 @@
+# Recyclarr — syncs TRaSH Guides quality profiles and custom formats to Sonarr/Radarr
+# Runs daily via CRON_SCHEDULE env var in docker-compose.yml
+#
+# If a template name errors on first run, check available templates with:
+#   docker exec recyclarr recyclarr list-templates
+
+sonarr:
+  main:
+    base_url: http://sonarr:8989
+    api_key: !env_var SONARR_API_KEY
+    include:
+      - template: sonarr-quality-definition-series
+      - template: sonarr-v4-quality-profile-web-1080p
+      - template: sonarr-v4-custom-formats-web-1080p
+
+radarr:
+  main:
+    base_url: http://radarr:7878
+    api_key: !env_var RADARR_API_KEY
+    include:
+      - template: radarr-quality-definition-movie
+      - template: radarr-quality-profile-web-1080p
+      - template: radarr-custom-formats-web-1080p
