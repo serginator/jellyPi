@@ -167,6 +167,23 @@ services:
     networks:
       - media
 
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: jellypi
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ${STORAGE}/config/tailscale:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    network_mode: host
+    restart: unless-stopped
+
 networks:
   media:
     driver: bridge
