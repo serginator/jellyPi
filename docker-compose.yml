@@ -71,6 +71,30 @@ services:
     networks:
       - media
 
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASSWORD}
+      - SERVER_REGIONS=${PIA_SERVER_REGION:-Spain}
+      - FIREWALL_INPUT_PORTS=8080
+    volumes:
+      - ${STORAGE}/config/gluetun:/gluetun
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+    networks:
+      - media
+
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -82,13 +106,10 @@ services:
     volumes:
       - ${STORAGE}/config/qbittorrent:/config
       - ${STORAGE}/data/torrents:/data/torrents
-    ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
     restart: unless-stopped
-    networks:
-      - media
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -153,7 +174,7 @@ services:
     container_name: decluttarr
     environment:
       - TZ=${TZ}
-      - QBITTORRENT_URL=http://qbittorrent:8080
+      - QBITTORRENT_URL=http://gluetun:8080
       - QBITTORRENT_USERNAME=admin
       - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
       - SONARR_URL=http://sonarr:8989
