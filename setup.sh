@@ -167,7 +167,7 @@ QBTSH
 chmod +x "$REPO_DIR/qbt.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 
-CRON_PAUSE="0 7 * * * $REPO_DIR/qbt.sh stop"
+CRON_PAUSE="0 8 * * * $REPO_DIR/qbt.sh stop"
 CRON_RESUME="0 1 * * * $REPO_DIR/qbt.sh start"
 (crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "qbt.sh"; echo "$CRON_PAUSE"; echo "$CRON_RESUME") | crontab -u "$MAIN_USER" -
 

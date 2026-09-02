@@ -188,6 +188,17 @@ services:
     networks:
       - media
 
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - TZ=${TZ}
+    ports:
+      - 8191:8191
+    restart: unless-stopped
+    networks:
+      - media
+
   tailscale:
     image: tailscale/tailscale:latest
     container_name: tailscale

@@ -4,7 +4,7 @@
 
 Media center para Raspberry Pi 4 con descarga automática de series y películas.
 
-**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr · Gluetun · Tailscale  
+**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr · Gluetun · Tailscale · FlareSolverr  
 **Acceso en la tele:** App Jellyfin en Chromecast con Google TV  
 **Añadir contenido:** Seerr desde el móvil o portátil  
 **Acceso remoto:** Tailscale — sin abrir puertos en el router  
@@ -115,7 +115,7 @@ docker compose restart qbittorrent
 **Horario de descarga** (via `qbt.sh`, instalado por `setup.sh`):
 
 - `01:00` — reanuda todos los torrents
-- `07:00` — pausa todos los torrents
+- `08:00` — pausa todos los torrents
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.
 
@@ -176,10 +176,16 @@ Indexers recomendados:
 |---------|-----|------|
 | YTS | `https://yts.gg/` | Películas |
 | The Pirate Bay | (primera URL de la lista) | General |
+| EZTV | (primera URL de la lista) | Series |
 | Nyaa.si | `https://nyaa.si` | Anime |
 | AnimeTosho | `https://animetosho.org` | Anime |
 
-> EZTV y 1337x están bloqueados por Cloudflare desde IPs de Pi. Nyaa.si y AnimeTosho no.
+> 1337x está bloqueado a nivel TCP desde IPs del Pi — FlareSolverr no ayuda. Nyaa.si y AnimeTosho no tienen Cloudflare agresivo.
+
+**FlareSolverr** bypasea los Cloudflare browser challenges en indexers que lo necesitan (ej. EZTV):
+
+1. **Settings → Indexers → Proxies → +** → FlareSolverr → Host `http://flaresolverr:8191` → tag `flaresolverr`
+2. En cada indexer afectado, añade el mismo tag `flaresolverr` en el campo **Tags**
 
 Al añadir Nyaa.si, verifica que **Settings → Apps → Sonarr → Sync Categories** incluye categorías de anime (`Anime - English Translated`, `Anime - Raw`, etc.).
 
@@ -321,6 +327,7 @@ Instala la app **Jellyfin** desde Google Play y añade el servidor `http://jelly
 | Uptime Kuma  | 3001   |
 | Gluetun      | expone el 8080 y 6881 de qBittorrent |
 | Tailscale    | acceso vía `100.x.x.x` |
+| FlareSolverr | 8191 |
 
 ---
 

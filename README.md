@@ -4,7 +4,7 @@
 
 Media center for Raspberry Pi 4 with automatic TV show and movie downloading.
 
-**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr · Gluetun · Tailscale  
+**Stack:** Jellyfin · Sonarr · Radarr · Prowlarr · qBittorrent · Seerr · Gluetun · Tailscale · FlareSolverr  
 **Watch on TV:** Jellyfin app on Chromecast with Google TV  
 **Add content:** Seerr from your phone or laptop  
 **Remote access:** Tailscale — no open ports required  
@@ -115,7 +115,7 @@ docker compose restart qbittorrent
 **Download schedule** (via `qbt.sh`, installed by `setup.sh`):
 
 - `01:00` — resume all torrents
-- `07:00` — pause all torrents
+- `08:00` — pause all torrents
 
 > `qbt.sh` authenticates via API on each call — qBittorrent 5.x ignores the localhost auth bypass. Update the password in the script if you change it in qBittorrent.
 
@@ -176,10 +176,16 @@ Recommended indexers:
 |---------|-----|-----|
 | YTS | `https://yts.gg/` | Movies |
 | The Pirate Bay | (first URL in list) | General |
+| EZTV | (first URL in list) | TV Shows |
 | Nyaa.si | `https://nyaa.si` | Anime |
 | AnimeTosho | `https://animetosho.org` | Anime |
 
-> EZTV and 1337x are blocked by Cloudflare from Pi IPs. Nyaa.si and AnimeTosho are not.
+> 1337x is blocked at TCP level from Pi IPs — FlareSolverr cannot help. Nyaa.si and AnimeTosho have no aggressive Cloudflare.
+
+**FlareSolverr** bypasses Cloudflare browser challenges for indexers that need it (e.g. EZTV):
+
+1. **Settings → Indexers → Proxies → +** → FlareSolverr → Host `http://flaresolverr:8191` → tag `flaresolverr`
+2. On each affected indexer, set the same tag `flaresolverr` in the **Tags** field
 
 When adding Nyaa.si, verify **Settings → Apps → Sonarr → Sync Categories** includes anime categories (`Anime - English Translated`, `Anime - Raw`, etc.).
 
@@ -321,6 +327,7 @@ Install the **Jellyfin** app from Google Play and add server `http://jellypi.loc
 | Uptime Kuma  | 3001 |
 | Gluetun      | exposes qBittorrent's 8080 and 6881 |
 | Tailscale    | access via `100.x.x.x` |
+| FlareSolverr | 8191 |
 
 ---
 
