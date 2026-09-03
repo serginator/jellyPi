@@ -148,21 +148,53 @@ On first access: **Authentication Required → Disabled for Local Addresses**.
 
 Bazarr adds Spanish subtitles automatically — don't filter by "spanish" on Nyaa.
 
+**Quality Definitions** (Settings → Quality) — set size limits for `Bluray-1080p`:
+
+| Field | Value |
+|---|---|
+| Preferred | `50` MB/min |
+| Max | `70` MB/min |
+
+This keeps episodes under ~4 GB even for 60-minute episodes (70 MB/min × 60 min = 4.2 GB).
+
+**Quality Profile** — enable `Bluray-1080p`, order from best to worst:
+
+| Quality | Status |
+|---|---|
+| `Bluray-1080p` | ✅ |
+| `WEB-DL-1080p` | ✅ |
+| `WEBRip-1080p` | ✅ |
+| `Remux-1080p` | ❌ |
+| `Remux-2160p` | ❌ |
+| `Bluray-2160p` | ❌ |
+
 ### Radarr — `http://jellypi.local:7878`
 
 1. **Settings → Media Management → Root Folders:** add `/data/media/movies`
 2. **Settings → Download Clients → + → qBittorrent:** Host `gluetun`, Port `8080`, Category `movies`
 3. Copy the **API Key** from Settings → General
 
-**Quality Profile** — disable oversized formats:
+**Quality Definitions** (Settings → Quality) — set size limits for `Bluray-1080p`:
+
+| Field | Value |
+|---|---|
+| Preferred | `80` MB/min |
+| Max | `100` MB/min |
+
+This caps BluRay encodes at ~12 GB for a 2-hour movie. Remux files (200+ MB/min) are rejected automatically.
+
+**Quality Profile** — enable `Bluray-1080p`, disable oversized formats, order from best to worst:
 
 | Quality | Status | Typical size |
 |---|---|---|
+| `Bluray-1080p` | ✅ | 4-12GB |
+| `WEB-DL-1080p` | ✅ | 2-8GB |
+| `WEBRip-1080p` | ✅ | 2-8GB |
 | `Remux-1080p` | ❌ | 20-50GB |
 | `Remux-2160p` | ❌ | 40-80GB |
 | `Bluray-2160p` | ❌ | 40-80GB |
-| `WEB-DL-1080p` | ✅ | 2-8GB |
-| `WEBRip-1080p` | ✅ | 2-8GB |
+
+Radarr picks `Bluray-1080p` first when available; falls back to `WEB-DL-1080p`.
 
 ### Prowlarr — `http://jellypi.local:9696`
 
@@ -328,6 +360,32 @@ Install the **Jellyfin** app from Google Play and add server `http://jellypi.loc
 | Gluetun      | exposes qBittorrent's 8080 and 6881 |
 | Tailscale    | access via `100.x.x.x` |
 | FlareSolverr | 8191 |
+
+---
+
+## Backup & restore
+
+`backup.sh` stops all containers, tars the config dirs (excluding Jellyfin cache and metadata), then restarts. Run from `~/jellypi` on the Pi:
+
+```bash
+./backup.sh
+# → backups/config-YYYYMMDD-HHMMSS.tar.gz
+```
+
+Copy the file off the Pi before reinstalling (scp, USB drive, etc.).
+
+**Restore on a fresh install:**
+
+```bash
+git clone git@github.com:serginator/jellyPi.git ~/jellypi
+cd ~/jellypi
+cp /path/to/your/.env .env          # copy your real .env, not env.example
+sudo bash setup.sh                  # formats HDD, installs Docker, system deps
+docker compose up -d && sleep 30 && docker compose down   # let services initialize once
+./restore.sh /path/to/backup.tar.gz # extracts config, wipes series/movie lists, starts up
+```
+
+After restore: Sonarr/Radarr have all your settings (quality profiles, custom formats, indexers, download clients) but no library. Re-add content via Seerr and scan libraries in Jellyfin.
 
 ---
 
