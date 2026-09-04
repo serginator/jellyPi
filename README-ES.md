@@ -114,7 +114,7 @@ docker compose restart qbittorrent
 
 **Horario de descarga** (via `qbt.sh`, instalado por `setup.sh`):
 
-- `01:00` — reanuda todos los torrents
+- Cada 30 min de `01:00` a `07:30` — reanuda todos los torrents (coge los que se añadan durante la noche)
 - `08:00` — pausa todos los torrents
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.
