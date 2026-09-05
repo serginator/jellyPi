@@ -337,6 +337,29 @@ chmod 600 ~/jellypi/.env
 - **Decluttarr** — elimina torrents atascados y los bloquea en Sonarr/Radarr
 - **Unpackerr** — extrae `.rar` y notifica a Sonarr/Radarr para importar
 
+### Notificaciones de Telegram
+
+Sonarr y Radarr notifican contenido añadido al seguimiento y descargas finalizadas (incluidas mejoras de calidad) mediante su integración nativa con Telegram — sin necesidad de un bot propio. Uptime Kuma notifica cambios de estado en los chequeos de la misma forma.
+
+1. Crea un bot con [@BotFather](https://t.me/BotFather) y copia el bot token
+2. Escribe al bot y luego abre `https://api.telegram.org/bot<TOKEN>/getUpdates` para obtener tu `chat_id`
+3. Añade a `.env`:
+
+```
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+4. Ejecuta el script de configuración desde `~/jellypi` en el Pi para configurar Sonarr y Radarr automáticamente:
+
+```bash
+chmod +x ~/jellypi/telegram-setup.sh && ~/jellypi/telegram-setup.sh
+```
+
+5. Configura Uptime Kuma manualmente (no tiene una API REST simple): Settings → Notifications → Add → **Telegram**, usando el mismo Bot Token y Chat ID, y actívala en cada monitor (o marca "Apply on all existing monitors").
+
+> Por qué Sonarr/Radarr en vez de qBittorrent para las notificaciones de descargas: qBittorrent no tiene concepto de "añadido al seguimiento" y sus eventos de finalización solo llevan el nombre crudo del torrent, sin metadata de serie/película. Las notificaciones de Sonarr/Radarr incluyen título, temporada/episodio o año, y calidad.
+
 ---
 
 ## 6. Ver contenido en el Chromecast
