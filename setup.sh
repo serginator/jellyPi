@@ -135,6 +135,7 @@ if [[ ! -f $QBT_CONF ]]; then
 Session\AddTorrentPaused=true
 Session\DHT=true
 Session\LSD=false
+ExcludedFileNames=*.exe;*.scr;*.bat;*.cmd;*.com;*.msi;*.js;*.vbs;*.jar;*.ps1
 Session\MaxActiveDownloads=1
 Session\MaxActiveSeeds=2
 Session\MaxActiveTorrents=2

@@ -123,6 +123,25 @@ En **Tools → Options → Downloads**, pon Default Save Path a `/data/torrents`
 
 Las categorías `tv` y `movies` las crea Sonarr/Radarr automáticamente. Para anime añade manualmente la categoría `sonarr-anime` con save path `/data/torrents/anime`.
 
+**Bloquear archivos ejecutables** (a veces aparecen releases falsos/malware disfrazados de episodios antes de la fecha real de estreno — Sonarr no puede detectarlos porque el nombre parece legítimo y el tamaño no siempre es sospechoso). `setup.sh` lo aplica automáticamente en instalaciones nuevas. Para editarlo manualmente, en **Tools → Options → Downloads → Excluded file names**, añade:
+
+```
+*.exe
+*.scr
+*.bat
+*.cmd
+*.com
+*.msi
+*.js
+*.vbs
+*.jar
+*.ps1
+```
+
+> Bug conocido en qBittorrent 5.0.x donde este filtro no se aplica (arreglado en versiones posteriores) — comprueba tu versión en Help → About si no parece funcionar.
+
+Si se cuela un torrent falso, bórralo desde **Sonarr → Activity → Queue** (icono de papelera → marcar "Blocklist") en vez de borrarlo directamente en qBittorrent — así se bloquea ese release concreto para que Sonarr no lo vuelva a coger, y lanza una búsqueda inmediata de otra fuente. El episodio sigue monitorizado de todas formas, así que Sonarr cogerá el release real en cuanto se estrene, sin intervención manual.
+
 ### Sonarr — `http://jellypi.local:8989`
 
 En el primer acceso: **Authentication Required → Disabled for Local Addresses**.
