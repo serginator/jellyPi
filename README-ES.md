@@ -318,6 +318,8 @@ Benchmark de regiones — prueba todas y aplica la más rápida:
 chmod +x ~/jellypi/pia-benchmark.sh && ~/jellypi/pia-benchmark.sh
 ```
 
+El script incluye una lista predefinida de regiones con ping bajo en la variable `REGIONS`, al principio de `pia-benchmark.sh`. Para probar otras regiones, edita esa variable.
+
 ### Tailscale (acceso remoto)
 
 Añade en `.env`:

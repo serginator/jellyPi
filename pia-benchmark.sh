@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REGIONS=("ES Madrid" "ES Valencia" "France" "Netherlands" "Nigeria" "Portugal" "Romania")
+REGIONS=("ES Madrid" "ES Valencia" "France" "Netherlands" "Nigeria" "Portugal" "Romania" "Belgium" "DE Frankfurt" "Androrra")
 DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="$DIR/.env"
 TEST_URL="https://speed.cloudflare.com/__down?bytes=10000000"

@@ -318,6 +318,8 @@ Benchmark all configured regions and apply the fastest:
 chmod +x ~/jellypi/pia-benchmark.sh && ~/jellypi/pia-benchmark.sh
 ```
 
+The script comes with a preset list of low-latency regions in the `REGIONS` variable at the top of `pia-benchmark.sh`. Edit that variable to test different regions.
+
 ### Tailscale (remote access)
 
 Add to `.env`:
