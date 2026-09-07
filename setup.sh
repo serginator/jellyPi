@@ -132,18 +132,17 @@ if [[ ! -f $QBT_CONF ]]; then
     mkdir -p "$(dirname "$QBT_CONF")"
     cat > "$QBT_CONF" <<'QBTEOF'
 [BitTorrent]
-Session\AddTorrentPaused=true
-Session\DHT=true
-Session\LSD=false
-ExcludedFileNames=*.exe;*.scr;*.bat;*.cmd;*.com;*.msi;*.js;*.vbs;*.jar;*.ps1
-Session\MaxActiveDownloads=1
-Session\MaxActiveSeeds=2
-Session\MaxActiveTorrents=2
-Session\MaxConnections=50
-Session\MaxConnectionsPerTorrent=10
-Session\MaxRatio=1
-Session\MaxRatioAction=0
-Session\PeX=true
+ExcludedFileNamesEnabled=true
+Session\AddTorrentStopped=true
+Session\ExcludedFileNames=*.exe, *.scr, *.bat, *.cmd, *.com, *.msi, *.js, *.vbs, *.jar, *.ps1, *.zipx
+Session\GlobalMaxRatio=0.2
+Session\GlobalUPSpeedLimit=1200
+Session\MaxActiveDownloads=4
+Session\MaxActiveUploads=1
+Session\MaxConnections=200
+Session\MaxConnectionsPerTorrent=40
+Session\MaxUploads=4
+Session\ShareLimitAction=Stop
 
 [Preferences]
 WebUI\AlternativeUIEnabled=true

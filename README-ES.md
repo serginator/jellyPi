@@ -104,13 +104,15 @@ docker compose restart qbittorrent
 
 | Parámetro | Valor |
 |-----------|-------|
-| Conexiones globales | 50 |
-| Conexiones por torrent | 10 |
-| Descargas activas | 1 |
-| Seeds activos | 2 |
-| DHT | activado |
-| LSD | desactivado |
-| Ratio máx | 1.0 (pausa al completar) |
+| Conexiones globales | 200 |
+| Conexiones por torrent | 40 |
+| Descargas activas | 4 |
+| Subidas activas (seeds) | 1 |
+| Slots máx. de subida | 4 |
+| Límite de subida | 1200 KiB/s |
+| Ratio máx | 0.2 (pausa al completar)
+
+> Aumentado desde los límites originales más conservadores (50/10 conexiones, 500 KiB/s de subida) tras añadir Gluetun: el túnel VPN aparece como una única conexión de cara al router doméstico (en vez de una por cada peer), así que la saturación de la tabla de conexiones del router deja de ser un problema. El horario de descarga (ver abajo) sigue manteniendo toda la actividad de torrents parada en horario laboral.
 
 **Horario de descarga** (via `qbt.sh`, instalado por `setup.sh`):
 
@@ -136,6 +138,7 @@ Las categorías `tv` y `movies` las crea Sonarr/Radarr automáticamente. Para an
 *.vbs
 *.jar
 *.ps1
+*.zipx
 ```
 
 > Bug conocido en qBittorrent 5.0.x donde este filtro no se aplica (arreglado en versiones posteriores) — comprueba tu versión en Help → About si no parece funcionar.

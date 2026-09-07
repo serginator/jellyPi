@@ -104,13 +104,15 @@ docker compose restart qbittorrent
 
 | Setting | Value |
 |---------|-------|
-| Global connections | 50 |
-| Connections per torrent | 10 |
-| Active downloads | 1 |
-| Active seeds | 2 |
-| DHT | enabled |
-| LSD | disabled |
-| Max ratio | 1.0 (pause on completion) |
+| Global connections | 200 |
+| Connections per torrent | 40 |
+| Active downloads | 4 |
+| Active uploads (seeds) | 1 |
+| Max upload slots | 4 |
+| Upload speed limit | 1200 KiB/s |
+| Max ratio | 0.2 (pause on completion) |
+
+> Raised from the original conservative limits (50/10 connections, 500 KiB/s upload) after adding Gluetun: the VPN tunnel appears as a single connection to the home router (instead of one per peer), so router conntrack saturation is no longer a concern. The download schedule (see below) still keeps all torrent activity off during work hours.
 
 **Download schedule** (via `qbt.sh`, installed by `setup.sh`):
 
@@ -136,6 +138,7 @@ The `tv` and `movies` categories are created automatically by Sonarr/Radarr. For
 *.vbs
 *.jar
 *.ps1
+*.zipx
 ```
 
 > Known bug in qBittorrent 5.0.x where this filter doesn't apply (fixed in later releases) — check your version under Help → About if it doesn't seem to work.
