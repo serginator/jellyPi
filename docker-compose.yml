@@ -199,6 +199,26 @@ services:
     networks:
       - media
 
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    command: serve
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=info
+      - DIUN_WATCH_WORKERS=20
+      - DIUN_WATCH_SCHEDULE=0 6 * * *
+      - DIUN_PROVIDERS_DOCKER=true
+      - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true
+      - DIUN_NOTIF_TELEGRAM_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - DIUN_NOTIF_TELEGRAM_CHATIDS=${TELEGRAM_CHAT_ID}
+    volumes:
+      - ${STORAGE}/config/diun:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - media
+
   tailscale:
     image: tailscale/tailscale:latest
     container_name: tailscale

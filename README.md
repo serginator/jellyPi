@@ -361,6 +361,10 @@ chmod 600 ~/jellypi/.env
 - **Decluttarr** — removes stalled torrents and blocklists them in Sonarr/Radarr
 - **Unpackerr** — extracts `.rar` files and notifies Sonarr/Radarr to import
 
+### Diun (no UI)
+
+Watches all containers for new image versions on their registry (all services here use `:latest`) and notifies via Telegram — it does **not** auto-update anything, just tells you when there's something new to pull. Reuses `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` from `.env`, no extra config needed. Checks daily at 6am (`DIUN_WATCH_SCHEDULE`).
+
 ### Telegram notifications
 
 Sonarr and Radarr notify content added to tracking and finished downloads (including upgrades) via their native Telegram integration — no custom bot needed. Uptime Kuma notifies check status changes the same way.

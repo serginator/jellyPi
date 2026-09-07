@@ -50,6 +50,7 @@ mkdir -p \
     "$STORAGE/config/prowlarr" \
     "$STORAGE/config/qbittorrent" \
     "$STORAGE/config/seerr" \
+    "$STORAGE/config/diun" \
     "$STORAGE/docker"
 
 chown -R 1000:1000 "$STORAGE"
