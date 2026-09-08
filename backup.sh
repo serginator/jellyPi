@@ -9,7 +9,9 @@ echo "Stopping containers..."
 docker compose stop
 
 echo "Creating backup (excluding cache, metadata, logs)..."
-tar czf "$OUT" \
+# sudo is required: diun and tailscale run as root in their containers, so
+# diun.db and the tailscale state dir are root-owned and unreadable by pi.
+sudo tar czf "$OUT" \
   --exclude="mnt/storage/config/jellyfin/cache" \
   --exclude="mnt/storage/config/jellyfin/data/metadata" \
   --exclude="mnt/storage/config/jellyfin/data/transcodes" \
@@ -17,6 +19,7 @@ tar czf "$OUT" \
   --exclude="*/logs" \
   -C / \
   "mnt/storage/config"
+sudo chown "$(id -u):$(id -g)" "$OUT"
 
 docker compose start
 echo "Backup: $OUT ($(du -sh "$OUT" | cut -f1))"

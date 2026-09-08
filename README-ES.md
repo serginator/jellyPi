@@ -82,6 +82,12 @@ docker compose ps
 
 La primera vez descarga ~1.5GB de imágenes.
 
+Cuando Sonarr y Radarr estén arriba, ejecuta `post-setup.sh` para leer sus API keys autogeneradas en `.env` y configurar de una vez las notificaciones de Telegram y decluttarr (necesita `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` y `QBITTORRENT_PASSWORD` ya puestos en `.env` — omite lo que no esté configurado):
+
+```bash
+chmod +x ~/jellypi/post-setup.sh && ~/jellypi/post-setup.sh
+```
+
 ---
 
 ## 5. Configurar los servicios
@@ -120,6 +126,8 @@ docker compose restart qbittorrent
 - `08:00` — pausa todos los torrents
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.
+
+**Reinicio diario**: `08:05`, 5 minutos después de pausar los torrents — limpia cualquier estado atascado (fugas de memoria, sockets colgados) sin intervención. Instalado por `setup.sh` mediante una regla de sudoers limitada a `NOPASSWD: /usr/sbin/reboot` (nada más) para el usuario principal, así el cron no necesita contraseña. Comprobar con `sudo cat /etc/sudoers.d/<usuario>-reboot` y `crontab -l`.
 
 En **Tools → Options → Downloads**, pon Default Save Path a `/data/torrents`.
 
@@ -352,6 +360,8 @@ PIA_USER=              # usuario de Private Internet Access
 PIA_PASSWORD=          # contraseña de Private Internet Access
 ```
 
+`post-setup.sh` (ver [paso 4](#4-levantar-los-servicios)) rellena `SONARR_API_KEY`/`RADARR_API_KEY` automáticamente y configura decluttarr — el resto de esta sección solo aplica si necesitas repetirlo a mano.
+
 Restringe los permisos del `.env`:
 
 ```bash
@@ -361,6 +371,15 @@ chmod 600 ~/jellypi/.env
 - **Decluttarr** — elimina torrents atascados y los bloquea en Sonarr/Radarr
 - **Unpackerr** — extrae `.rar` y notifica a Sonarr/Radarr para importar
 
+Decluttarr v2+ dejó de soportar variables de entorno por servicio — ahora lee un `config.yaml` montado. Ejecuta esto una vez que Sonarr/Radarr hayan arrancado al menos una vez y el `.env` tenga las API keys reales:
+
+```bash
+chmod +x ~/jellypi/decluttarr-setup.sh && ~/jellypi/decluttarr-setup.sh
+docker compose restart decluttarr
+```
+
+Vuelve a ejecutarlo si cambian las API keys o la contraseña de qBittorrent en `.env`.
+
 ### Diun (sin UI)
 
 Vigila todos los contenedores por si hay una versión nueva de imagen en su registro (todos los servicios aquí usan `:latest`) y avisa por Telegram — **no** actualiza nada automáticamente, solo notifica cuando hay algo nuevo que descargar. Reutiliza `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` del `.env`, sin configuración extra. Comprueba a diario a las 6am (`DIUN_WATCH_SCHEDULE`).
@@ -368,6 +387,8 @@ Vigila todos los contenedores por si hay una versión nueva de imagen en su regi
 ### Notificaciones de Telegram
 
 Sonarr y Radarr notifican contenido añadido al seguimiento y descargas finalizadas (incluidas mejoras de calidad) mediante su integración nativa con Telegram — sin necesidad de un bot propio. Uptime Kuma notifica cambios de estado en los chequeos de la misma forma.
+
+`post-setup.sh` (ver [paso 4](#4-levantar-los-servicios)) ejecuta `telegram-setup.sh` automáticamente si `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` ya están puestos en `.env` — los pasos siguientes son para la configuración inicial de esas variables o para repetirlo a mano.
 
 1. Crea un bot con [@BotFather](https://t.me/BotFather) y copia el bot token
 2. Escribe al bot y luego abre `https://api.telegram.org/bot<TOKEN>/getUpdates` para obtener tu `chat_id`

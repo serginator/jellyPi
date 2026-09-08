@@ -168,9 +168,21 @@ QBTSH
 chmod +x "$REPO_DIR/qbt.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 
+# ── 12. Daily reboot (safety net) ─────────────────────────────────────────────
+# 8:05am, 5 min after qBittorrent stops for the day — clears any stuck state
+# (memory leaks, hung sockets...) unattended. Scoped sudoers rule: only allows
+# rebooting, nothing else, so cron doesn't need the user's password.
+log "Setting up daily reboot at 8:05am..."
+SUDOERS_FILE="/etc/sudoers.d/${MAIN_USER}-reboot"
+echo "$MAIN_USER ALL=(root) NOPASSWD: /usr/sbin/reboot" > "$SUDOERS_FILE"
+chmod 0440 "$SUDOERS_FILE"
+visudo -cf "$SUDOERS_FILE" || die "Invalid sudoers rule for reboot"
+CRON_REBOOT="5 8 * * * sudo /usr/sbin/reboot"
+
 CRON_PAUSE="0 8 * * * $REPO_DIR/qbt.sh stop"
 CRON_RESUME="0 1 * * * $REPO_DIR/qbt.sh start"
-(crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "qbt.sh"; echo "$CRON_PAUSE"; echo "$CRON_RESUME") | crontab -u "$MAIN_USER" -
+(crontab -u "$MAIN_USER" -l 2>/dev/null | grep -v "qbt.sh\|sudo /usr/sbin/reboot"; echo "$CRON_PAUSE"; echo "$CRON_RESUME"; echo "$CRON_REBOOT") | crontab -u "$MAIN_USER" -
+
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 IP=$(hostname -I | awk '{print $1}')

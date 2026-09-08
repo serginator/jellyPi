@@ -16,7 +16,8 @@ echo "Stopping containers..."
 docker compose down
 
 echo "Extracting config..."
-tar xzf "$BACKUP" -C /
+# sudo is required: diun.db and the tailscale state dir are root-owned.
+sudo tar xzf "$BACKUP" -C /
 
 echo "Stripping library data from Sonarr/Radarr (settings kept)..."
 
