@@ -51,6 +51,7 @@ mkdir -p \
     "$STORAGE/config/qbittorrent" \
     "$STORAGE/config/seerr" \
     "$STORAGE/config/diun" \
+    "$STORAGE/config/homepage" \
     "$STORAGE/docker"
 
 chown -R 1000:1000 "$STORAGE"
@@ -194,3 +195,4 @@ echo "  Sonarr (TV):         http://$IP:8989"
 echo "  Radarr (movies):     http://$IP:7878"
 echo "  Prowlarr (indexers): http://$IP:9696"
 echo "  qBittorrent:         http://$IP:8080"
+echo "  Homepage (dashboard): http://$IP:3000 (run ./homepage-setup.sh after Sonarr/Radarr/Prowlarr have started once)"

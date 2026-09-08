@@ -293,6 +293,25 @@ Elige SQLite en el primer arranque. Añade un monitor HTTP(s) por servicio:
 | qBittorrent | `http://gluetun:8080` |
 | Bazarr | `http://bazarr:6767` |
 
+### Homepage (dashboard) — `http://jellypi.local:3000`
+
+Una única página con un enlace + estadísticas en vivo de cada servicio (colas, espacio en disco, qué se está reproduciendo...), para no tener que recordar cada puerto.
+
+Ejecuta una vez que Sonarr, Radarr y Prowlarr hayan arrancado al menos una vez:
+
+```bash
+chmod +x ~/jellypi/homepage-setup.sh && ~/jellypi/homepage-setup.sh
+```
+
+Esto lee las API keys que ya están en `.env`/generadas por Sonarr/Radarr/Prowlarr y escribe `services.yaml`, `widgets.yaml` y `settings.yaml` en `$STORAGE/config/homepage`. Jellyfin y Seerr se añaden solo como enlaces por defecto (sus API keys no se generan automáticamente) — para tener también widgets con ellos, crea una key en **Jellyfin → Dashboard → API Keys** y **Seerr → Settings → General**, añádelas a `.env` como `JELLYFIN_API_KEY`/`SEERR_API_KEY`, y vuelve a ejecutar:
+
+```bash
+./homepage-setup.sh
+docker compose restart homepage
+```
+
+(`docker compose up -d` no basta — igual que con decluttarr, no detecta cambios en un archivo montado por bind mount sin un reinicio real.)
+
 ### Gluetun (VPN)
 
 Enruta todo el tráfico de qBittorrent por PIA. Tailscale y el resto del stack no se ven afectados.
@@ -431,6 +450,7 @@ Instala la app **Jellyfin** desde Google Play y añade el servidor `http://jelly
 | qBittorrent  | 8080   |
 | Bazarr       | 6767   |
 | Uptime Kuma  | 3001   |
+| Homepage     | 3000   |
 | Gluetun      | expone el 8080 y 6881 de qBittorrent |
 | Tailscale    | acceso vía `100.x.x.x` |
 | FlareSolverr | 8191 |
