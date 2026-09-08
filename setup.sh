@@ -160,12 +160,6 @@ fi
 # ── 11. qBittorrent schedule script + cron ────────────────────────────────────
 log "Setting up qBittorrent schedule..."
 REPO_DIR=$(eval echo "~$MAIN_USER/jellypi")
-cat > "$REPO_DIR/qbt.sh" <<'QBTSH'
-#!/bin/bash
-# ponytail: login required — qBittorrent 5.x CSRF protection ignores LocalHostAuth bypass
-SID=$(curl -s -c /tmp/qbt.sid -d 'username=admin&password=adminadmin' http://localhost:8080/api/v2/auth/login)
-curl -s -b /tmp/qbt.sid -d "hashes=all" "http://localhost:8080/api/v2/torrents/$1"
-QBTSH
 chmod +x "$REPO_DIR/qbt.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 
