@@ -303,7 +303,18 @@ Ejecuta una vez que Sonarr, Radarr y Prowlarr hayan arrancado al menos una vez:
 chmod +x ~/jellypi/homepage-setup.sh && ~/jellypi/homepage-setup.sh
 ```
 
-Esto lee las API keys que ya están en `.env`/generadas por Sonarr/Radarr/Prowlarr y escribe `services.yaml`, `widgets.yaml` y `settings.yaml` en `$STORAGE/config/homepage`. Jellyfin y Seerr se añaden solo como enlaces por defecto (sus API keys no se generan automáticamente) — para tener también widgets con ellos, crea una key en **Jellyfin → Dashboard → API Keys** y **Seerr → Settings → General**, añádelas a `.env` como `JELLYFIN_API_KEY`/`SEERR_API_KEY`, y vuelve a ejecutar:
+Esto lee las API keys que ya están en `.env`/generadas por Sonarr/Radarr/Prowlarr y escribe `services.yaml`, `widgets.yaml` y `settings.yaml` en `$STORAGE/config/homepage`. Jellyfin, Seerr, Bazarr y Tailscale se añaden solo como enlaces por defecto (sus keys no se generan automáticamente) — para tener también widgets con ellos:
+
+| Servicio | Dónde conseguir la key | Variable(s) en `.env` |
+|----------|-------------------------|------------------------|
+| Jellyfin | Dashboard → API Keys → + | `JELLYFIN_API_KEY` |
+| Seerr | Settings → General → API Key | `SEERR_API_KEY` |
+| Bazarr | Settings → General → API Key | `BAZARR_API_KEY` |
+| Tailscale | [Access token](https://login.tailscale.com/admin/settings/keys) + [device ID](https://login.tailscale.com/admin/machines) (selecciona la Pi → Machine Details → ID) | `TAILSCALE_API_KEY` + `TAILSCALE_DEVICE_ID` |
+
+El widget de Jellyfin muestra el total de películas/series/episodios y qué se está reproduciendo — no puede separar el anime porque Jellyfin cuenta por tipo de elemento en todo el servidor, no por librería. Bazarr muestra el número de episodios/películas con subtítulos pendientes.
+
+Añade las keys que quieras a `.env` y vuelve a ejecutar:
 
 ```bash
 ./homepage-setup.sh
@@ -311,6 +322,10 @@ docker compose restart homepage
 ```
 
 (`docker compose up -d` no basta — igual que con decluttarr, no detecta cambios en un archivo montado por bind mount sin un reinicio real.)
+
+#### Tema visual
+
+Pon `HOMEPAGE_THEME=cyberpunk` en `.env` para un look neón/oscuro (color de acento + superposición de scanlines + brillo en títulos y enlaces), luego vuelve a ejecutar `./homepage-setup.sh` y `docker compose restart homepage`. Déjalo sin definir (o con cualquier otro valor) para el look por defecto.
 
 ### Gluetun (VPN)
 
