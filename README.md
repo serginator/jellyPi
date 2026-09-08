@@ -1,6 +1,6 @@
 🇬🇧 English | [🇪🇸 Español](README-ES.md)
 
-<img width="1228" height="350" alt="image" src="https://github.com/user-attachments/assets/0c7a3c61-768b-46d3-8b0f-bd223a240001" />
+<img width="1376" height="768" alt="image" src="https://github.com/user-attachments/assets/97606fdc-3ba8-4f1f-92f3-443d7e64434c" />
 
 # jellypi
 
