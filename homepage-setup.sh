@@ -71,6 +71,14 @@ EOF
 cat > "$CONFIG_DIR/bookmarks.yaml" <<'EOF'
 EOF
 
+# Required for every "server: localhost" reference in services.yaml — Homepage
+# has no implicit default docker instance, so without this file it errors with
+# "Cannot read properties of null (reading 'localhost')".
+cat > "$CONFIG_DIR/docker.yaml" <<'EOF'
+localhost:
+  socket: /var/run/docker.sock
+EOF
+
 cat > "$CONFIG_DIR/services.yaml" <<EOF
 - Media:
     - Jellyfin:
