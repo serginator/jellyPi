@@ -158,11 +158,12 @@ services:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
       - TZ=${TZ}
       # Host-header check only (not auth) — safe to disable on a LAN/Tailscale-only stack
       - HOMEPAGE_ALLOWED_HOSTS=*
+      # No PUID/PGID: Homepage needs to run as root to read /var/run/docker.sock
+      # directly (same reason diun has none either) — otherwise every service
+      # shows "unknown" status because it can't query container state at all.
     volumes:
       - ${STORAGE}/config/homepage:/app/config
       - ${STORAGE}:/mnt/storage:ro
