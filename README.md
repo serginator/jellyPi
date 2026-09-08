@@ -1,5 +1,7 @@
 🇬🇧 English | [🇪🇸 Español](README-ES.md)
 
+<img width="1228" height="350" alt="image" src="https://github.com/user-attachments/assets/0c7a3c61-768b-46d3-8b0f-bd223a240001" />
+
 # jellypi
 
 Media center for Raspberry Pi 4 with automatic TV show and movie downloading.
