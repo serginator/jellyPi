@@ -327,6 +327,21 @@ docker compose restart homepage
 
 Pon `HOMEPAGE_THEME=cyberpunk` en `.env` para un look neón/oscuro (color de acento + superposición de scanlines + brillo en títulos y enlaces), luego vuelve a ejecutar `./homepage-setup.sh` y `docker compose restart homepage`. Déjalo sin definir (o con cualquier otro valor) para el look por defecto.
 
+### Portainer
+
+Homepage no permite reiniciar/parar contenedores desde sus propias tarjetas (limitación reconocida por el propio proyecto, fuera de su alcance) — para eso se añade **Portainer** (`http://jellypi.local:9000`), con tarjeta propia en la sección "System" de Homepage: gestor de contenedores con botones de start/stop/restart, logs y consola por contenedor. Al primer arranque, crea la cuenta admin desde el navegador (usuario/contraseña a tu elección).
+
+Añade en `.env` (opcional, activa el widget de Homepage con el recuento running/stopped):
+
+```
+# Tras crear la cuenta admin en Portainer: Settings → API access tokens → Add
+PORTAINER_API_KEY=
+```
+
+Luego `docker compose up -d portainer` y, si añadiste `PORTAINER_API_KEY`, vuelve a ejecutar `./homepage-setup.sh` + `docker compose restart homepage`.
+
+> ⚠️ Da control total sobre el Docker de la Pi — equivalente a acceso SSH como `pi` (puede parar/arrancar cualquier contenedor). Solo accesible desde tu LAN/Tailscale; no expongas este puerto a internet.
+
 ### Gluetun (VPN)
 
 Enruta todo el tráfico de qBittorrent por PIA. Tailscale y el resto del stack no se ven afectados.
@@ -469,6 +484,7 @@ Instala la app **Jellyfin** desde Google Play y añade el servidor `http://jelly
 | Gluetun      | expone el 8080 y 6881 de qBittorrent |
 | Tailscale    | acceso vía `100.x.x.x` |
 | FlareSolverr | 8191 |
+| Portainer    | 9000 |
 
 ---
 

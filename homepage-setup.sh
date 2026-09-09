@@ -43,6 +43,11 @@ TAILSCALE_DEVICE_ID="${TAILSCALE_DEVICE_ID:-}"
 [[ -z $BAZARR_API_KEY ]] && echo "BAZARR_API_KEY no está en .env, omito su widget (solo tendrá el enlace)."
 [[ -z $TAILSCALE_API_KEY || -z $TAILSCALE_DEVICE_ID ]] && echo "TAILSCALE_API_KEY/TAILSCALE_DEVICE_ID no están en .env, omito su widget."
 
+# Portainer's API key isn't auto-generated like the Servarr apps — it only
+# exists once the user creates the admin account and an access token by hand.
+PORTAINER_API_KEY="${PORTAINER_API_KEY:-}"
+[[ -z $PORTAINER_API_KEY ]] && echo "PORTAINER_API_KEY no está en .env, omito su widget (solo tendrá el enlace)."
+
 # Optional visual theme. Set HOMEPAGE_THEME=cyberpunk in .env for a neon/dark
 # look (accent color + scanline overlay + glowing headings/links via
 # custom.css). Anything else (or unset) keeps the plain default look.
@@ -294,6 +299,22 @@ $( [[ -n $TAILSCALE_API_KEY && -n $TAILSCALE_DEVICE_ID ]] && cat <<EOF2
             deviceid: "${TAILSCALE_DEVICE_ID}"
             key: "${TAILSCALE_API_KEY}"
             fields: ["address", "update_available"]
+EOF2
+)
+
+    - Portainer:
+        icon: portainer.png
+        href: http://jellypi.local:9000
+        description: Docker container management (start/stop/restart)
+        server: localhost
+        container: portainer
+$( [[ -n $PORTAINER_API_KEY ]] && cat <<EOF2
+        widgets:
+          - type: portainer
+            url: http://portainer:9000
+            env: 1
+            key: "${PORTAINER_API_KEY}"
+            fields: ["running", "stopped", "total"]
 EOF2
 )
 EOF

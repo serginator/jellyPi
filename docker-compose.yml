@@ -231,6 +231,19 @@ services:
     networks:
       - media
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${STORAGE}/config/portainer:/data
+    ports:
+      - 9000:9000
+    mem_limit: 256m
+    restart: unless-stopped
+    networks:
+      - media
+
   tailscale:
     image: tailscale/tailscale:latest
     container_name: tailscale
