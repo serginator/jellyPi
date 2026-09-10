@@ -59,6 +59,9 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -203,6 +206,9 @@ services:
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       - TZ=${TZ}
     ports:
