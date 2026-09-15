@@ -30,6 +30,13 @@ actual Pi (`ssh pi@jellypi.local`, repo cloned at `~/jellypi`).
   `docker compose restart <service>`, **not** `up -d` — compose doesn't
   detect content changes in a mounted file, only changes to the service
   definition.
+- `iptv-setup.sh` is the exception to the above: it configures Jellyfin Live
+  TV (M3U tuner + XMLTV EPG) through Jellyfin's own REST API (needs
+  `JELLYFIN_API_KEY` and `STORAGE` in `.env`), not a YAML config file — no
+  `docker compose restart` needed, just re-run the script. It does write one
+  file under `$STORAGE/config/jellyfin/iptv/tv.m3u` (a deduplicated copy of
+  the TDTChannels list, since the raw list has several mirror URLs per
+  channel), which the M3U tuner reads directly.
 - `backup.sh`/`restore.sh` run over remote SSH need a pseudo-terminal: always
   use `ssh -t pi@jellypi.local "cd jellypi && ./backup.sh"` (there's
   interactive sudo with no `NOPASSWD` except for `reboot`).

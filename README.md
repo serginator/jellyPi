@@ -262,6 +262,34 @@ Add libraries in the first-run wizard:
 
 Hardware acceleration (Pi 4): **Dashboard → Playback → Transcoding → Video4Linux2 (V4L2)**
 
+#### Live TV (free IPTV)
+
+`iptv-setup.sh` configures Jellyfin's built-in Live TV with a free M3U
+channel list and matching XMLTV EPG, both from
+[TDTChannels](https://www.tdtchannels.com/) (Spanish free-to-air channels:
+national generalistas — La 1, La 2, 24h... — plus every región's
+autonómicas, and many local/international channels). Requires
+`JELLYFIN_API_KEY` and `STORAGE` in `.env` (Dashboard → API Keys → +):
+
+```bash
+./iptv-setup.sh
+```
+
+TDTChannels' raw list includes several mirror URLs per channel under the
+same id (so a naive import would show duplicated channels); the script
+downloads it, keeps only the primary URL per channel, and writes the result
+to a local file inside Jellyfin's config volume, which is what the tuner
+points to. The M3U and EPG share the same channel-id scheme, so Jellyfin
+matches them automatically — no custom name-matching needed, unlike a
+first attempt with [iptv-org](https://github.com/iptv-org/iptv) +
+[epgshare01](https://epgshare01.online/), which used incompatible id
+schemes and had dead/DRM-protected streams for some RTVE channels (La 1 in
+particular). Live TV streams are relayed as-is (no transcoding needed in
+most cases), so the Pi handles playback comfortably; refreshing the full
+guide the first time can take a few minutes since it processes a large
+XMLTV file. Idempotent — safe to re-run any time to refresh the channel
+list and guide.
+
 ### Bazarr — `http://jellypi.local:6767`
 
 1. **Settings → Providers → + → OpenSubtitles.com**

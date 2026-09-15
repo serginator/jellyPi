@@ -262,6 +262,37 @@ Añade las bibliotecas en el asistente de primer arranque:
 
 Hardware acceleration (Pi 4): **Dashboard → Playback → Transcoding → Video4Linux2 (V4L2)**
 
+#### TV en directo (IPTV gratis)
+
+`iptv-setup.sh` configura la Live TV integrada de Jellyfin con una lista M3U
+gratuita y su guía EPG XMLTV a juego, ambas de
+[TDTChannels](https://www.tdtchannels.com/) (canales españoles en abierto:
+generalistas nacionales — La 1, La 2, 24h... — más las autonómicas de todas
+las comunidades y bastantes canales locales/internacionales). Necesita
+`JELLYFIN_API_KEY` y `STORAGE` en `.env` (Dashboard → API Keys → +):
+
+```bash
+./iptv-setup.sh
+```
+
+La lista original de TDTChannels incluye varias URLs mirror por canal bajo
+el mismo id (si se importara tal cual, Jellyfin mostraría canales
+duplicados); el script la descarga, se queda solo con la URL principal de
+cada canal, y guarda el resultado en un fichero local dentro del volumen de
+configuración de Jellyfin, que es al que apunta el tuner. La lista M3U y la
+guía EPG comparten el mismo esquema de id de canal, así que Jellyfin los
+empareja automáticamente — sin necesidad de matching por nombre, a
+diferencia de un primer intento con
+[iptv-org](https://github.com/iptv-org/iptv) +
+[epgshare01](https://epgshare01.online/), que usaban esquemas de id
+incompatibles y tenían streams caídos o protegidos con DRM en algunos
+canales de RTVE (La 1 en concreto). Los streams de TV en directo se
+retransmiten tal cual (normalmente sin transcodificar), así que la Pi lo
+lleva sin problema; la primera vez que se refresca la guía completa puede
+tardar varios minutos porque procesa un XMLTV grande. Es idempotente — se
+puede volver a ejecutar cuando quieras para refrescar la lista de canales y
+la guía.
+
 ### Bazarr — `http://jellypi.local:6767`
 
 1. **Settings → Providers → + → OpenSubtitles.com**
