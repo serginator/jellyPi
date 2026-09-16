@@ -5,10 +5,14 @@
 Read the **full** handoff before doing anything in this repo:
 `~/projects/claude-plans-and-docs/jellypi_media-center/handoff.md`
 
-It's the most up-to-date source of truth: current status, day-by-day history
-of applied fixes, hardware, network, pending items, and things to watch. This
-file (`AGENTS.md`) only covers stable repo conventions, not project status —
-don't duplicate that here or try to keep it in sync with the handoff.
+It's the most up-to-date source of truth: a condensed recap of what's built,
+open investigations/pending items, and a runbook of recurring operational
+processes (updating containers, manual import, IPTV refresh, network diag,
+reinstall, shutdown) — not a day-by-day history. It defers to README-ES.md
+for stack/setup/service configuration, and to this file for repo
+conventions. This file (`AGENTS.md`) only covers stable repo conventions,
+not project status — don't duplicate that here or try to keep it in sync
+with the handoff.
 
 After any relevant change in a session, propose updating the handoff
 (explaining what was done and why, not just the what) instead of assuming it

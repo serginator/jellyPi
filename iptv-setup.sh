@@ -12,8 +12,15 @@
 # first (primary) URL per channel, and writes the result to a local file
 # inside Jellyfin's config volume, which is what the M3U tuner points to.
 #
-# Idempotent: safe to re-run — re-downloads and re-deduplicates the list,
-# skips the tuner/provider if already present, and re-triggers a channel +
+# Also adds a second, separate M3U tuner with the Pluto TV Spain lineup
+# (all its themed channels, including Pluto TV Anime and South Park) plus
+# One Piece, sourced from iptv-org (https://github.com/iptv-org/iptv) and
+# filtered down to just those channels. No matching EPG source is wired in
+# for this tuner (iptv-org's guide data for these needs a live scraper, not
+# a static file) — Jellyfin will show them without program info.
+#
+# Idempotent: safe to re-run — re-downloads and re-deduplicates both lists,
+# skips any tuner/provider already present, and re-triggers a channel +
 # guide refresh so updates (new channels, moved streams...) get picked up.
 set -euo pipefail
 
@@ -29,12 +36,15 @@ JELLYFIN_URL="http://localhost:8096"
 AUTH_HEADER="Authorization: MediaBrowser Token=\"${JELLYFIN_API_KEY}\""
 M3U_SOURCE_URL="https://www.tdtchannels.com/lists/tv.m3u"
 EPG_URL="https://www.tdtchannels.com/epg/TV.xml.gz"
+PLUTO_SOURCE_URL="https://iptv-org.github.io/iptv/index.m3u"
 
 # Ruta en el host (montada como /config dentro del contenedor de Jellyfin).
 M3U_HOST_DIR="${STORAGE}/config/jellyfin/iptv"
 M3U_HOST_PATH="${M3U_HOST_DIR}/tv.m3u"
+PLUTO_HOST_PATH="${M3U_HOST_DIR}/pluto.m3u"
 # Ruta tal y como la ve Jellyfin (dentro del contenedor).
 M3U_CONTAINER_PATH="/config/iptv/tv.m3u"
+PLUTO_CONTAINER_PATH="/config/iptv/pluto.m3u"
 
 jf_get() { curl -sf -H "$AUTH_HEADER" "${JELLYFIN_URL}$1"; }
 jf_post() { curl -sf -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" -d "$2" "${JELLYFIN_URL}$1"; }
@@ -86,6 +96,47 @@ print(f'{len(entries)} entradas originales -> {len(deduped)} canales únicos.')
 "
 rm -f "${M3U_HOST_PATH}.raw"
 
+echo "Descargando lista de canales de iptv-org (para filtrar Pluto TV España)..."
+curl -sf "$PLUTO_SOURCE_URL" -o "${PLUTO_HOST_PATH}.raw"
+
+echo "Filtrando lineup de Pluto TV España + One Piece..."
+python3 -c "
+import re
+
+with open('${PLUTO_HOST_PATH}.raw', encoding='utf-8') as f:
+    lines = f.read().splitlines()
+
+header, entries, i = lines[0], [], 1
+while i < len(lines):
+    line = lines[i]
+    if line.startswith('#EXTINF'):
+        url = lines[i + 1] if i + 1 < len(lines) else None
+        entries.append((line, url))
+        i += 2
+    else:
+        i += 1
+
+def is_pluto_spain(extinf, url):
+    if not url:
+        return False
+    m = re.search(r'tvg-id=\"([^\"]*)\"', extinf)
+    tvgid = m.group(1) if m else ''
+    is_es = tvgid.endswith('@ES') or tvgid == 'OnePiece.us@Spain'
+    is_pluto = 'images.pluto.tv' in extinf or '/plu-' in url
+    return is_es and is_pluto
+
+selected = [(extinf, url) for extinf, url in entries if is_pluto_spain(extinf, url)]
+
+with open('${PLUTO_HOST_PATH}', 'w', encoding='utf-8') as f:
+    f.write(header + '\n')
+    for extinf, url in selected:
+        f.write(extinf + '\n')
+        f.write(url + '\n')
+
+print(f'{len(selected)} canales de Pluto TV España seleccionados.')
+"
+rm -f "${PLUTO_HOST_PATH}.raw"
+
 CONFIG=$(jf_get "/System/Configuration/livetv")
 
 TUNER_ID=$(echo "$CONFIG" | python3 -c "
@@ -112,6 +163,32 @@ else
         \"UserAgent\": \"\"
     }" | python3 -c "import json,sys; print(json.load(sys.stdin)['Id'])")
     echo "Tuner añadido: $TUNER_ID"
+fi
+
+PLUTO_TUNER_ID=$(echo "$CONFIG" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+for t in d.get('TunerHosts', []):
+    if t.get('Url') == '$PLUTO_CONTAINER_PATH':
+        print(t['Id'])
+        break
+")
+
+if [[ -n "$PLUTO_TUNER_ID" ]]; then
+    echo "Tuner M3U ya configurado ($PLUTO_TUNER_ID), omito creación."
+else
+    echo "Añadiendo tuner M3U (Pluto TV España, lista filtrada)..."
+    PLUTO_TUNER_ID=$(jf_post "/LiveTv/TunerHosts" "{
+        \"Type\": \"m3u\",
+        \"Url\": \"$PLUTO_CONTAINER_PATH\",
+        \"FriendlyName\": \"Pluto TV España\",
+        \"TunerCount\": 1,
+        \"AllowHWTranscoding\": true,
+        \"AllowFmp4TranscodingContainer\": false,
+        \"AllowStreamSharing\": true,
+        \"UserAgent\": \"\"
+    }" | python3 -c "import json,sys; print(json.load(sys.stdin)['Id'])")
+    echo "Tuner añadido: $PLUTO_TUNER_ID"
 fi
 
 PROVIDER_ID=$(echo "$CONFIG" | python3 -c "

@@ -290,6 +290,26 @@ guide the first time can take a few minutes since it processes a large
 XMLTV file. Idempotent — safe to re-run any time to refresh the channel
 list and guide.
 
+The script also adds a second, independent M3U tuner, "Pluto TV España",
+with the full Pluto TV Spain lineup (themed movie/series/anime channels...)
+plus One Piece, filtered from the [iptv-org](https://github.com/iptv-org/iptv)
+list by tvg-id (`@ES` / Pluto streams). No matching EPG — iptv-org/epg's
+guide for these needs a scraper (a container + cron + manual channel↔site
+mapping by name) instead of a static file, so it isn't wired in; these
+channels show up in Jellyfin without program info.
+
+**Why the base list wasn't switched to `iptv-org`
+(`countries/es.m3u`/`languages/spa.m3u`)**: evaluated and discarded.
+`languages/spa.m3u` doesn't work (mixes any Spanish-speaking country, not
+just Spain). `countries/es.m3u` has fewer channels than TDTChannels (336 vs
+442) and reproduces the same already-discarded La 1 problem (its URL still
+returns 403 today). On top of that, its EPG would require the
+[iptv-org/epg](https://github.com/iptv-org/epg) Docker container with
+scheduled scraping and manual channel↔site name matching — exactly the
+complexity TDTChannels avoids by sharing an id scheme between M3U and EPG.
+Conclusion: TDTChannels remains the best base; iptv-org is only used for
+the Pluto TV add-on, which doesn't compete with it.
+
 ### Bazarr — `http://jellypi.local:6767`
 
 1. **Settings → Providers → + → OpenSubtitles.com**
