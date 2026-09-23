@@ -323,9 +323,9 @@ añade `TMDB_API_KEY` a `.env` (clave gratuita en themoviedb.org) y ejecuta:
 ./jellyfin-plugins-setup.sh
 ```
 
-El script añade los repositorios de terceros, instala los tres plugins vía
-la API de Jellyfin, pre-escribe su configuración y reinicia Jellyfin.
-Solo queda un paso manual después: el webhook de Moonbase en Seerr (ver abajo).
+El script añade los repositorios, instala los tres plugins vía API, pre-escribe
+su configuración, reinicia Jellyfin y configura el webhook de Moonbase en Seerr.
+Todo automático, sin pasos manuales.
 
 | Plugin | Repositorio | Para qué sirve |
 |--------|-------------|----------------|
@@ -333,11 +333,7 @@ Solo queda un paso manual después: el webhook de Moonbase en Seerr (ver abajo).
 | **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Integra Seerr en la UI de Jellyfin (búsqueda, peticiones, trending) |
 | **Moonbase** | github.com/Moonfin-Client/Plugin | Mejoras de UI: logos de estudios, sincronización con Seerr, push web |
 
-**Webhook de Moonbase en Seerr** (para sincronizar el estado de peticiones en
-tiempo real): después de instalar los plugins, crea un webhook en
-**Seerr → Settings → Notifications → Webhook**:
-- URL: `http://jellyfin:8096/Moonfin/webhook`
-- Auth header: `X-Webhook-Secret: <secret que imprime el script>`
+El webhook de Moonbase en Seerr se configura automáticamente por el script.
 
 ### Bazarr — `http://jellypi.local:6767`
 

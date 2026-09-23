@@ -319,9 +319,9 @@ Three plugins extend the Jellyfin UI. To install them from scratch, add
 ./jellyfin-plugins-setup.sh
 ```
 
-The script adds the third-party repositories, installs the three plugins via
-the Jellyfin API, pre-writes their configuration, and restarts Jellyfin.
-Only one manual step remains: the Moonbase webhook in Seerr (see below).
+The script adds the repositories, installs the three plugins via API, pre-writes
+their configuration, restarts Jellyfin, and configures the Moonbase webhook in
+Seerr. Fully automated, no manual steps.
 
 | Plugin | Repository | Purpose |
 |--------|------------|---------|
@@ -329,11 +329,7 @@ Only one manual step remains: the Moonbase webhook in Seerr (see below).
 | **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Embeds Seerr inside Jellyfin UI (search, requests, trending) |
 | **Moonbase** | github.com/Moonfin-Client/Plugin | UI enhancements: studio logos, Seerr sync, web push notifications |
 
-**Moonbase webhook in Seerr** (to sync request status in real time): after
-installing the plugins, create a webhook in
-**Seerr → Settings → Notifications → Webhook**:
-- URL: `http://jellyfin:8096/Moonfin/webhook`
-- Auth header: `X-Webhook-Secret: <secret printed by the script>`
+The Moonbase webhook in Seerr is configured automatically by the script.
 
 ### Bazarr — `http://jellypi.local:6767`
 

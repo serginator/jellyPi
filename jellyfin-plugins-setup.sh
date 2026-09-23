@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Adds 3 Jellyfin plugin repositories, installs the plugins via API,
-# pre-writes their configurations, and restarts Jellyfin.
+# Fully automated setup for 3 Jellyfin plugins: File Transformator, SeerrFin, Moonbase.
+# - Adds plugin repositories to Jellyfin
+# - Installs the plugins via API
+# - Pre-writes their configurations
+# - Restarts Jellyfin
+# - Configures the Moonbase webhook in Seerr
 # Run after `docker compose up -d` and after completing the Jellyfin setup wizard.
 # Requires JELLYFIN_API_KEY, SEERR_API_KEY, SONARR_API_KEY, RADARR_API_KEY,
 # and TMDB_API_KEY in .env.
-# Only remaining manual step: configure the Moonbase webhook in Seerr.
 set -euo pipefail
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -27,11 +30,23 @@ STORAGE="${STORAGE:-/mnt/storage}"
 JF_URL="http://localhost:8096"
 JF_AUTH="X-Emby-Authorization: MediaBrowser Token=\"${JELLYFIN_API_KEY}\""
 PLUGINS_CONF="$STORAGE/config/jellyfin/data/plugins/configurations"
+MOONBASE_CONF="$PLUGINS_CONF/Moonfin.Server.xml"
+SEERR_CONF="$PLUGINS_CONF/Jellyfin.Plugin.SeerrFin.xml"
+
+# ── 0. Resolve Moonbase webhook secret ────────────────────────────────────────
+# Read from existing config if present, generate otherwise.
+mkdir -p "$PLUGINS_CONF"
+if [[ -f $MOONBASE_CONF ]]; then
+    MOONBASE_SECRET=$(grep -o '<SeerrWebhookSecret>[^<]*</SeerrWebhookSecret>' "$MOONBASE_CONF" \
+        | sed 's/<[^>]*>//g')
+    warn "Moonbase config already exists — reusing webhook secret from it."
+else
+    MOONBASE_SECRET=$(openssl rand -hex 16)
+fi
 
 # ── 1. Add plugin repositories ─────────────────────────────────────────────────
 log "Adding plugin repositories to Jellyfin..."
 
-# POST /Repositories replaces the full list — include the default repo.
 REPOS_JSON='[
   {"Name":"Jellyfin Stable","Url":"https://repo.jellyfin.org/files/plugin/manifest.json","Enabled":true},
   {"Name":"File Transformator","Url":"https://www.iamparadox.dev/jellyfin/plugins/manifest.json","Enabled":true},
@@ -88,10 +103,6 @@ log "All plugins installed."
 
 # ── 3. Pre-write plugin configurations ─────────────────────────────────────────
 log "Writing plugin configurations..."
-mkdir -p "$PLUGINS_CONF"
-
-SEERR_CONF="$PLUGINS_CONF/Jellyfin.Plugin.SeerrFin.xml"
-MOONBASE_CONF="$PLUGINS_CONF/Moonfin.Server.xml"
 
 if [[ -f $SEERR_CONF ]]; then
     warn "SeerrFin config already exists, skipping."
@@ -121,9 +132,7 @@ fi
 
 if [[ -f $MOONBASE_CONF ]]; then
     warn "Moonbase config already exists, skipping."
-    MOONBASE_SECRET="<see $MOONBASE_CONF — field SeerrWebhookSecret>"
 else
-    MOONBASE_SECRET=$(openssl rand -hex 16)
     cat > "$MOONBASE_CONF" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <PluginConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
@@ -150,10 +159,74 @@ log "Restarting Jellyfin so plugins load..."
 (cd "$DIR" && docker compose restart jellyfin)
 log "Jellyfin restarted."
 
-# ── 5. One remaining manual step ──────────────────────────────────────────────
-echo
-warn "One manual step remaining — configure the Moonbase webhook in Seerr:"
-warn "  Seerr → Settings → Notifications → Webhook → Add Webhook"
-warn "  URL:         http://jellyfin:8096/Moonfin/webhook"
-warn "  Auth header: X-Webhook-Secret: ${MOONBASE_SECRET}"
-warn "  Events: Request Approved, Request Available, etc."
+# ── 5. Configure Moonbase webhook in Seerr ────────────────────────────────────
+log "Configuring Moonbase webhook in Seerr..."
+
+export MOONBASE_SECRET
+python3 - <<'PYEOF'
+import json, os, urllib.request
+
+SEERR_URL = "http://localhost:5055"
+SEERR_KEY = os.environ["SEERR_API_KEY"]
+MOONBASE_SECRET = os.environ["MOONBASE_SECRET"]
+HEADERS = {"X-Api-Key": SEERR_KEY, "Content-Type": "application/json"}
+
+# Check if webhook is already pointing at Moonbase
+req = urllib.request.Request(f"{SEERR_URL}/api/v1/settings/notifications/webhook",
+    headers=HEADERS)
+current = json.loads(urllib.request.urlopen(req).read())
+existing_url = current.get("options", {}).get("webhookUrl", "")
+
+if "Moonfin" in existing_url:
+    print("[plugins] Seerr webhook already configured for Moonbase, skipping.")
+else:
+    json_payload = (
+        '{\n'
+        '    "notification_type": "{{notification_type}}",\n'
+        '    "subject": "{{subject}}",\n'
+        '    "message": "{{message}}",\n'
+        '    "notifyuser_username": "{{notifyuser_username}}",\n'
+        '    "{{media}}": {\n'
+        '        "media_type": "{{media_type}}",\n'
+        '        "tmdbId": "{{media_tmdbid}}",\n'
+        '        "tvdbId": "{{media_tvdbid}}",\n'
+        '        "status": "{{media_status}}"\n'
+        '    },\n'
+        '    "{{request}}": {\n'
+        '        "request_id": "{{request_id}}",\n'
+        '        "requestedBy_username": "{{requestedBy_username}}",\n'
+        '        "requestedBy_jellyfinUserId": "{{requestedBy_jellyfinUserId}}"\n'
+        '    },\n'
+        '    "{{issue}}": {\n'
+        '        "issue_id": "{{issue_id}}",\n'
+        '        "issue_type": "{{issue_type}}",\n'
+        '        "issue_status": "{{issue_status}}",\n'
+        '        "reportedBy_username": "{{reportedBy_username}}"\n'
+        '    },\n'
+        '    "{{comment}}": {\n'
+        '        "comment_message": "{{comment_message}}",\n'
+        '        "commentedBy_username": "{{commentedBy_username}}"\n'
+        '    },\n'
+        '    "{{extra}}": []\n'
+        '}'
+    )
+    body = {
+        "enabled": True,
+        "types": 3918,
+        "options": {
+            "webhookUrl": f"http://jellyfin:8096/Moonfin/Seerr/Webhook?secret={MOONBASE_SECRET}",
+            "authHeader": "",
+            "jsonPayload": json_payload,
+            "customHeaders": [],
+            "supportVariables": False,
+        },
+    }
+    data = json.dumps(body).encode()
+    req = urllib.request.Request(
+        f"{SEERR_URL}/api/v1/settings/notifications/webhook",
+        data=data, method="POST", headers=HEADERS)
+    urllib.request.urlopen(req)
+    print("[plugins] Seerr webhook configured for Moonbase.")
+PYEOF
+
+log "Done. All plugins installed and configured."
