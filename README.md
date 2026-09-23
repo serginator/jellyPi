@@ -319,9 +319,9 @@ Three plugins extend the Jellyfin UI. To install them from scratch, add
 ./jellyfin-plugins-setup.sh
 ```
 
-The script adds the three third-party repositories to Jellyfin and pre-writes
-each plugin's configuration. Then install the plugins from
-**Dashboard → Plugins → Catalog** and restart: `docker compose restart jellyfin`.
+The script adds the third-party repositories, installs the three plugins via
+the Jellyfin API, pre-writes their configuration, and restarts Jellyfin.
+Only one manual step remains: the Moonbase webhook in Seerr (see below).
 
 | Plugin | Repository | Purpose |
 |--------|------------|---------|

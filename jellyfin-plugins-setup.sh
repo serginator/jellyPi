@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Adds 3 Jellyfin plugin repositories, pre-writes their configurations, and
-# prints instructions for installing them from the catalog.
+# Adds 3 Jellyfin plugin repositories, installs the plugins via API,
+# pre-writes their configurations, and restarts Jellyfin.
 # Run after `docker compose up -d` and after completing the Jellyfin setup wizard.
 # Requires JELLYFIN_API_KEY, SEERR_API_KEY, SONARR_API_KEY, RADARR_API_KEY,
 # and TMDB_API_KEY in .env.
+# Only remaining manual step: configure the Moonbase webhook in Seerr.
 set -euo pipefail
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -45,15 +46,55 @@ curl -sf -X POST "$JF_URL/Repositories" \
 
 log "Repositories added."
 
-# ── 2. Pre-write plugin configurations ─────────────────────────────────────────
-log "Writing plugin configurations to $PLUGINS_CONF ..."
+# ── 2. Install plugins via API ─────────────────────────────────────────────────
+log "Installing plugins..."
+
+MANIFEST_URLS=(
+    "https://www.iamparadox.dev/jellyfin/plugins/manifest.json"
+    "https://raw.githubusercontent.com/varunaditya-plus/SeerrFin/main/manifest.json"
+    "https://raw.githubusercontent.com/Moonfin-Client/Plugin/refs/heads/master/manifest.json"
+)
+
+python3 - "${MANIFEST_URLS[@]}" <<PYEOF
+import json, sys, urllib.request, urllib.parse
+
+JF_URL = "http://localhost:8096"
+API_KEY = "$(echo "$JELLYFIN_API_KEY" | sed "s/\"/\\\\\"/g")"
+HEADERS = {
+    "X-Emby-Authorization": f'MediaBrowser Token="{API_KEY}"',
+    "Content-Type": "application/json",
+}
+
+for manifest_url in sys.argv[1:]:
+    try:
+        data = json.loads(urllib.request.urlopen(manifest_url, timeout=15).read())
+        pkg = data[0]
+        name    = pkg["name"]
+        guid    = pkg["guid"]
+        version = pkg["versions"][0]["version"]
+        url = (f"{JF_URL}/Packages/Installed/{urllib.parse.quote(name)}"
+               f"?assemblyGuid={guid}&version={version}")
+        req = urllib.request.Request(url, data=b"", method="POST")
+        for k, v in HEADERS.items():
+            req.add_header(k, v)
+        urllib.request.urlopen(req)
+        print(f"[plugins] Installed: {name} v{version}")
+    except Exception as e:
+        print(f"[plugins] ERROR installing from {manifest_url}: {e}", file=sys.stderr)
+        sys.exit(1)
+PYEOF
+
+log "All plugins installed."
+
+# ── 3. Pre-write plugin configurations ─────────────────────────────────────────
+log "Writing plugin configurations..."
 mkdir -p "$PLUGINS_CONF"
 
 SEERR_CONF="$PLUGINS_CONF/Jellyfin.Plugin.SeerrFin.xml"
 MOONBASE_CONF="$PLUGINS_CONF/Moonfin.Server.xml"
 
 if [[ -f $SEERR_CONF ]]; then
-    warn "SeerrFin config already exists, skipping (edit $SEERR_CONF manually if needed)"
+    warn "SeerrFin config already exists, skipping."
 else
     cat > "$SEERR_CONF" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
@@ -79,10 +120,9 @@ EOF
 fi
 
 if [[ -f $MOONBASE_CONF ]]; then
-    warn "Moonbase config already exists, skipping (edit $MOONBASE_CONF manually if needed)"
-    MOONBASE_SECRET="<see existing config>"
+    warn "Moonbase config already exists, skipping."
+    MOONBASE_SECRET="<see $MOONBASE_CONF — field SeerrWebhookSecret>"
 else
-    # Generate a random webhook secret for Moonbase ↔ Seerr integration.
     MOONBASE_SECRET=$(openssl rand -hex 16)
     cat > "$MOONBASE_CONF" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
@@ -105,17 +145,15 @@ EOF
     log "Moonbase config written."
 fi
 
-# ── 3. Next steps ──────────────────────────────────────────────────────────────
+# ── 4. Restart Jellyfin ────────────────────────────────────────────────────────
+log "Restarting Jellyfin so plugins load..."
+(cd "$DIR" && docker compose restart jellyfin)
+log "Jellyfin restarted."
+
+# ── 5. One remaining manual step ──────────────────────────────────────────────
 echo
-warn "Next steps:"
-warn "1. Go to Dashboard → Plugins → Catalog and install:"
-warn "     - File Transformator  (by iamparadox)"
-warn "     - SeerrFin            (by varunaditya)"
-warn "     - Moonbase            (by Moonfin Client)"
-warn "2. Restart Jellyfin so the plugins load:"
-warn "     docker compose restart jellyfin"
-warn "3. Configure the Moonbase webhook in Seerr:"
-warn "   Seerr → Settings → Notifications → Webhook → Add Webhook"
-warn "   URL: http://jellyfin:8096/Moonfin/webhook"
-warn "   Auth header: X-Webhook-Secret: ${MOONBASE_SECRET}"
-warn "   Events: Request approved, Request available, etc."
+warn "One manual step remaining — configure the Moonbase webhook in Seerr:"
+warn "  Seerr → Settings → Notifications → Webhook → Add Webhook"
+warn "  URL:         http://jellyfin:8096/Moonfin/webhook"
+warn "  Auth header: X-Webhook-Secret: ${MOONBASE_SECRET}"
+warn "  Events: Request Approved, Request Available, etc."

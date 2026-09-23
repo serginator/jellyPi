@@ -323,9 +323,9 @@ añade `TMDB_API_KEY` a `.env` (clave gratuita en themoviedb.org) y ejecuta:
 ./jellyfin-plugins-setup.sh
 ```
 
-El script añade los tres repositorios de terceros a Jellyfin y pre-escribe la
-configuración de cada plugin. Después instala los plugins desde
-**Dashboard → Plugins → Catalog** y reinicia: `docker compose restart jellyfin`.
+El script añade los repositorios de terceros, instala los tres plugins vía
+la API de Jellyfin, pre-escribe su configuración y reinicia Jellyfin.
+Solo queda un paso manual después: el webhook de Moonbase en Seerr (ver abajo).
 
 | Plugin | Repositorio | Para qué sirve |
 |--------|-------------|----------------|
