@@ -26,6 +26,10 @@ Jellyfin + Sonarr/Radarr/Prowlarr/Bazarr + qBittorrent behind a VPN
 The code/config lives in this repo (Mac), and is deployed and operated on the
 actual Pi (`ssh pi@jellypi.local`, repo cloned at `~/jellypi`).
 
+## Automation standard
+
+Any setup task (new service, plugin, integration) must be **100% automated** via script — no "run the script then do X manually in the UI". If a service exposes an API, use it. Check existing scripts (`iptv-setup.sh`, `jellyfin-plugins-setup.sh`, `post-setup.sh`) for patterns: read `.env`, call the service API with curl/python3, write config files, restart the container. Document any truly unavoidable manual step explicitly in the README and the script output.
+
 ## Repo conventions
 
 - The `*-setup.sh` scripts (`homepage-setup.sh`, `decluttarr-setup.sh`,
