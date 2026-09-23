@@ -310,6 +310,31 @@ complexity TDTChannels avoids by sharing an id scheme between M3U and EPG.
 Conclusion: TDTChannels remains the best base; iptv-org is only used for
 the Pluto TV add-on, which doesn't compete with it.
 
+#### Jellyfin plugins
+
+Three plugins extend the Jellyfin UI. To install them from scratch, add
+`TMDB_API_KEY` to `.env` (free key at themoviedb.org) and run:
+
+```bash
+./jellyfin-plugins-setup.sh
+```
+
+The script adds the three third-party repositories to Jellyfin and pre-writes
+each plugin's configuration. Then install the plugins from
+**Dashboard → Plugins → Catalog** and restart: `docker compose restart jellyfin`.
+
+| Plugin | Repository | Purpose |
+|--------|------------|---------|
+| **File Transformator** | iamparadox.dev | Rename/transform media files |
+| **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Embeds Seerr inside Jellyfin UI (search, requests, trending) |
+| **Moonbase** | github.com/Moonfin-Client/Plugin | UI enhancements: studio logos, Seerr sync, web push notifications |
+
+**Moonbase webhook in Seerr** (to sync request status in real time): after
+installing the plugins, create a webhook in
+**Seerr → Settings → Notifications → Webhook**:
+- URL: `http://jellyfin:8096/Moonfin/webhook`
+- Auth header: `X-Webhook-Secret: <secret printed by the script>`
+
 ### Bazarr — `http://jellypi.local:6767`
 
 1. **Settings → Providers → + → OpenSubtitles.com**

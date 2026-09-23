@@ -66,4 +66,12 @@ else
     echo "QBITTORRENT_PASSWORD vacío en .env, omito configuración de decluttarr."
 fi
 
+if [[ -n "${JELLYFIN_API_KEY:-}" && -n "${TMDB_API_KEY:-}" ]]; then
+    echo "Configurando plugins de Jellyfin (SeerrFin, Moonbase, File Transformator)..."
+    "$DIR/jellyfin-plugins-setup.sh"
+else
+    echo "JELLYFIN_API_KEY o TMDB_API_KEY vacíos en .env, omito setup de plugins de Jellyfin."
+    echo "Ejecuta ./jellyfin-plugins-setup.sh manualmente cuando estén disponibles."
+fi
+
 echo "post-setup.sh completado."
