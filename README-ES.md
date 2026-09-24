@@ -122,14 +122,19 @@ docker compose restart qbittorrent
 
 > Aumentado desde los límites originales más conservadores (50/10 conexiones, 500 KiB/s de subida) tras añadir Gluetun: el túnel VPN aparece como una única conexión de cara al router doméstico (en vez de una por cada peer), así que la saturación de la tabla de conexiones del router deja de ser un problema. El horario de descarga (ver abajo) sigue manteniendo toda la actividad de torrents parada en horario laboral.
 
-**Horario de descarga** (via `qbt.sh`, instalado por `setup.sh`):
+**Horario de descarga y pausa por horario laboral** (cron instalado por `setup.sh`):
 
-- Cada 30 min de `01:00` a `07:30` — reanuda todos los torrents (coge los que se añadan durante la noche)
-- `08:00` — pausa todos los torrents
+| Hora | Días | Acción |
+|------|------|--------|
+| `01:00` | L-V | `qbt.sh start` — reanuda descargas (ventana nocturna) |
+| `08:00` | L-V | Para contenedores `qbittorrent` y `gluetun` antes del reinicio |
+| `08:05` | todos | Reinicio diario (los contenedores parados no vuelven con `unless-stopped`) |
+| `18:00` | L-V | Relanza `gluetun`, espera 15s, luego `qbittorrent` |
+| fines de semana | — | Sin restricciones, los contenedores corren libremente |
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.
 
-**Reinicio diario**: `08:05`, 5 minutos después de pausar los torrents — limpia cualquier estado atascado (fugas de memoria, sockets colgados) sin intervención. Instalado por `setup.sh` mediante una regla de sudoers limitada a `NOPASSWD: /usr/sbin/reboot` (nada más) para el usuario principal, así el cron no necesita contraseña. Comprobar con `sudo cat /etc/sudoers.d/<usuario>-reboot` y `crontab -l`.
+**Reinicio diario**: `08:05` — limpia cualquier estado atascado (fugas de memoria, sockets colgados) sin intervención. En días laborables, los contenedores `qbittorrent` y `gluetun` se paran a las `08:00` justo antes, de modo que `unless-stopped` evita que vuelvan a arrancar solos tras el reinicio. Instalado por `setup.sh` mediante una regla de sudoers limitada a `NOPASSWD: /usr/sbin/reboot` (nada más) para el usuario principal, así el cron no necesita contraseña. Comprobar con `sudo cat /etc/sudoers.d/<usuario>-reboot` y `crontab -l`.
 
 En **Tools → Options → Downloads**, pon Default Save Path a `/data/torrents`.
 
@@ -316,24 +321,20 @@ Pluto TV, que no compite con ella.
 
 #### Plugins de Jellyfin
 
-Tres plugins amplían la interfaz de Jellyfin. Para instalarlos desde cero,
+Dos plugins amplían la interfaz de Jellyfin. Para instalarlos desde cero,
 añade `TMDB_API_KEY` a `.env` (clave gratuita en themoviedb.org) y ejecuta:
 
 ```bash
 ./jellyfin-plugins-setup.sh
 ```
 
-El script añade los repositorios, instala los tres plugins vía API, pre-escribe
-su configuración, reinicia Jellyfin y configura el webhook de Moonbase en Seerr.
-Todo automático, sin pasos manuales.
+El script añade los repositorios, instala los dos plugins vía API, pre-escribe
+su configuración y reinicia Jellyfin. Todo automático, sin pasos manuales.
 
 | Plugin | Repositorio | Para qué sirve |
 |--------|-------------|----------------|
 | **File Transformator** | iamparadox.dev | Renombra/transforma ficheros de media |
 | **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Integra Seerr en la UI de Jellyfin (búsqueda, peticiones, trending) |
-| **Moonbase** | github.com/Moonfin-Client/Plugin | Mejoras de UI: logos de estudios, sincronización con Seerr, push web |
-
-El webhook de Moonbase en Seerr se configura automáticamente por el script.
 
 ### Bazarr — `http://jellypi.local:6767`
 
@@ -365,6 +366,13 @@ Elige SQLite en el primer arranque. Añade un monitor HTTP(s) por servicio:
 | Prowlarr | `http://prowlarr:9696` |
 | qBittorrent | `http://gluetun:8080` |
 | Bazarr | `http://bazarr:6767` |
+
+**Ventana de mantenimiento para qBittorrent** (evita alertas falsas durante la parada laboral): en el menú lateral, ve a **Maintenance → Create** y configura:
+- Estrategia: **Periódico - Día de la semana**, L-V
+- Ventana: `08:00 - 18:00`
+- Monitor afectado: qBittorrent
+
+Así Uptime Kuma suprime las notificaciones durante la parada pero sigue alertando si cae fuera de ese horario.
 
 ### Homepage (dashboard) — `http://jellypi.local:3000`
 

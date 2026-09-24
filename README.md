@@ -122,14 +122,19 @@ docker compose restart qbittorrent
 
 > Raised from the original conservative limits (50/10 connections, 500 KiB/s upload) after adding Gluetun: the VPN tunnel appears as a single connection to the home router (instead of one per peer), so router conntrack saturation is no longer a concern. The download schedule (see below) still keeps all torrent activity off during work hours.
 
-**Download schedule** (via `qbt.sh`, installed by `setup.sh`):
+**Download schedule and working-hours pause** (cron installed by `setup.sh`):
 
-- Every 30 min from `01:00` to `07:30` — resume all torrents (catches new torrents added during the night)
-- `08:00` — pause all torrents
+| Time | Days | Action |
+|------|------|--------|
+| `01:00` | Mon-Fri | `qbt.sh start` — resume downloads (overnight window) |
+| `08:00` | Mon-Fri | Stop `qbittorrent` and `gluetun` containers before reboot |
+| `08:05` | daily | Daily reboot (containers stopped won't restart with `unless-stopped`) |
+| `18:00` | Mon-Fri | Restart `gluetun`, wait 15s, then start `qbittorrent` |
+| weekends | — | No restrictions, containers run freely |
 
 > `qbt.sh` authenticates via API on each call — qBittorrent 5.x ignores the localhost auth bypass. Update the password in the script if you change it in qBittorrent.
 
-**Daily reboot**: `08:05`, 5 minutes after torrents pause — clears any stuck state (memory leaks, hung sockets) unattended. Installed by `setup.sh` via a sudoers rule scoped to `NOPASSWD: /usr/sbin/reboot` only (nothing else) for the main user, so the cron job doesn't need a password. Check with `sudo cat /etc/sudoers.d/<user>-reboot` and `crontab -l`.
+**Daily reboot**: `08:05` — clears any stuck state (memory leaks, hung sockets) unattended. On weekdays, `qbittorrent` and `gluetun` are stopped at `08:00` just before, so `unless-stopped` prevents them from restarting after the reboot. Installed by `setup.sh` via a sudoers rule scoped to `NOPASSWD: /usr/sbin/reboot` only (nothing else) for the main user, so the cron job doesn't need a password. Check with `sudo cat /etc/sudoers.d/<user>-reboot` and `crontab -l`.
 
 In **Tools → Options → Downloads**, set Default Save Path to `/data/torrents`.
 
@@ -312,24 +317,20 @@ the Pluto TV add-on, which doesn't compete with it.
 
 #### Jellyfin plugins
 
-Three plugins extend the Jellyfin UI. To install them from scratch, add
+Two plugins extend the Jellyfin UI. To install them from scratch, add
 `TMDB_API_KEY` to `.env` (free key at themoviedb.org) and run:
 
 ```bash
 ./jellyfin-plugins-setup.sh
 ```
 
-The script adds the repositories, installs the three plugins via API, pre-writes
-their configuration, restarts Jellyfin, and configures the Moonbase webhook in
-Seerr. Fully automated, no manual steps.
+The script adds the repositories, installs the two plugins via API, pre-writes
+their configuration, and restarts Jellyfin. Fully automated, no manual steps.
 
 | Plugin | Repository | Purpose |
 |--------|------------|---------|
 | **File Transformator** | iamparadox.dev | Rename/transform media files |
 | **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Embeds Seerr inside Jellyfin UI (search, requests, trending) |
-| **Moonbase** | github.com/Moonfin-Client/Plugin | UI enhancements: studio logos, Seerr sync, web push notifications |
-
-The Moonbase webhook in Seerr is configured automatically by the script.
 
 ### Bazarr — `http://jellypi.local:6767`
 
@@ -361,6 +362,13 @@ Choose SQLite on first run. Add one HTTP(s) monitor per service:
 | Prowlarr | `http://prowlarr:9696` |
 | qBittorrent | `http://gluetun:8080` |
 | Bazarr | `http://bazarr:6767` |
+
+**Maintenance window for qBittorrent** (suppresses false alerts during the weekday stop): in the sidebar, go to **Maintenance → Create** and set:
+- Strategy: **Recurring - Day of Week**, Mon-Fri
+- Window: `08:00 - 18:00`
+- Affected monitor: qBittorrent
+
+This suppresses notifications during the scheduled stop but still alerts if qBittorrent goes down outside that window.
 
 ### Homepage (dashboard) — `http://jellypi.local:3000`
 
