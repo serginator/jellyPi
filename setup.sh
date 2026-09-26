@@ -135,7 +135,7 @@ if [[ ! -f $QBT_CONF ]]; then
     cat > "$QBT_CONF" <<'QBTEOF'
 [BitTorrent]
 ExcludedFileNamesEnabled=true
-Session\AddTorrentStopped=true
+Session\AddTorrentStopped=false
 Session\ExcludedFileNames=*.exe, *.scr, *.bat, *.cmd, *.com, *.msi, *.js, *.vbs, *.jar, *.ps1, *.zipx
 Session\GlobalMaxRatio=0.2
 Session\GlobalUPSpeedLimit=1200
