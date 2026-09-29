@@ -49,6 +49,19 @@ set -a; source "$ENV_FILE"; set +a
 echo "Recreando unpackerr para aplicar las API keys..."
 (cd "$DIR" && docker compose up -d unpackerr)
 
+echo "Configurando restricciones de release en Radarr..."
+RADARR_PROFILES=$(curl -s "http://localhost:7878/api/v3/releaseprofile" -H "X-Api-Key: $RADARR_KEY")
+if echo "$RADARR_PROFILES" | grep -q '"HQ Pre"'; then
+    echo "Restricción 'HQ Pre' ya existe en Radarr, no la toco."
+else
+    curl -s -X POST "http://localhost:7878/api/v3/releaseprofile" \
+        -H "X-Api-Key: $RADARR_KEY" \
+        -H "Content-Type: application/json" \
+        -d '{"name":"Bloquear HQ Pre","enabled":true,"required":[],"ignored":["HQ Pre"],"indexerId":0,"tags":[]}' \
+        > /dev/null
+    echo "Restricción 'HQ Pre' añadida a Radarr."
+fi
+
 if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${TELEGRAM_CHAT_ID:-}" ]]; then
     echo "Configurando notificaciones de Telegram..."
     "$DIR/telegram-setup.sh"
