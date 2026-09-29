@@ -14,7 +14,7 @@ RADARR_KEY=$(grep -o "<ApiKey>[^<]*</ApiKey>" "$STORAGE/config/radarr/config.xml
 API="http://localhost:7878/api/v3"
 TAG_LABEL="odyssey-lowbudget-block"
 # Grupos que suben la versión de bajo presupuesto
-IGNORED='["LAMA","YTS","Kitsune"]'
+IGNORED='["LAMA","YTS","Kitsune","BONE"]'
 
 radarr() { curl -sf -H "X-Api-Key: $RADARR_KEY" -H "Content-Type: application/json" "$@"; }
 
