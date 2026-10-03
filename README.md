@@ -127,9 +127,9 @@ docker compose restart qbittorrent
 | Time | Days | Action |
 |------|------|--------|
 | `01:00` | Mon-Fri | `qbt.sh start` — resume downloads (overnight window) |
-| `08:00` | Mon-Fri | Stop `qbittorrent` and `gluetun` containers before reboot |
+| `08:00` | Mon-Fri | Stop `decluttarr`, `qbittorrent` and `gluetun` containers before reboot (without qBittorrent, decluttarr exits every ~40s and restart-loops) |
 | `08:05` | daily | Daily reboot (containers stopped won't restart with `unless-stopped`) |
-| `18:00` | Mon-Fri | Restart `gluetun`, wait 15s, then start `qbittorrent` |
+| `18:00` | Mon-Fri | Restart `gluetun`, wait 15s, then start `qbittorrent` and `decluttarr` |
 | weekends | — | No restrictions, containers run freely |
 
 > `qbt.sh` authenticates via API on each call — qBittorrent 5.x ignores the localhost auth bypass. Update the password in the script if you change it in qBittorrent.

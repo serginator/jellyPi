@@ -164,8 +164,9 @@ chmod +x "$REPO_DIR/qbt.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 
 # ── 12. Cron: daily reboot + working-hours container pause (Mon-Fri) ──────────
-# 08:00 L-V: stop qbittorrent + gluetun before the reboot.
-#            Both use restart:unless-stopped → they won't come back after reboot.
+# 08:00 L-V: stop decluttarr + qbittorrent + gluetun before the reboot.
+#            All use restart:unless-stopped → they won't come back after reboot.
+#            decluttarr exits every ~40s without qbittorrent → restart loop.
 # 08:05 daily: reboot — clears stuck state (memory leaks, hung sockets).
 #              Scoped sudoers rule: only allows rebooting, nothing else.
 # 18:00 L-V: restart gluetun, wait 15s for tunnel, then start qbittorrent.
@@ -183,8 +184,8 @@ chmod +x "$REPO_DIR/search-wanted.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/search-wanted.sh"
 
 CRON_REBOOT="5 8 * * *      sudo /usr/sbin/reboot"
-CRON_STOP="0 8 * * 1-5    cd $REPO_DIR && docker compose stop qbittorrent && docker compose stop gluetun"
-CRON_START="0 18 * * 1-5   cd $REPO_DIR && docker compose start gluetun && sleep 15 && docker compose start qbittorrent"
+CRON_STOP="0 8 * * 1-5    cd $REPO_DIR && docker compose stop decluttarr qbittorrent && docker compose stop gluetun"
+CRON_START="0 18 * * 1-5   cd $REPO_DIR && docker compose start gluetun && sleep 15 && docker compose start qbittorrent decluttarr"
 CRON_SEARCH="5 18 * * 1-5   $REPO_DIR/search-wanted.sh"
 CRON_RESUME="0 1 * * 1-5   $REPO_DIR/qbt.sh start"
 
