@@ -130,6 +130,7 @@ docker compose restart qbittorrent
 | `08:00` | L-V | Para contenedores `decluttarr`, `qbittorrent` y `gluetun` antes del reinicio (sin qBittorrent, decluttarr sale cada ~40s y entra en bucle de reinicios) |
 | `08:05` | todos | Reinicio diario (los contenedores parados no vuelven con `unless-stopped`) |
 | `18:00` | L-V | Relanza `gluetun`, espera 15s, luego `qbittorrent` y `decluttarr` |
+| `04:00` | domingo | `docker image prune -f` — borra imágenes sin etiqueta que dejan las actualizaciones |
 | fines de semana | — | Sin restricciones, los contenedores corren libremente |
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.

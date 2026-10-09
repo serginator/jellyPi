@@ -173,6 +173,7 @@ chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 # 18:05 L-V: search-wanted.sh — retries any Sonarr/Radarr grabs that failed
 #            while qBittorrent was stopped (API calls fail silently, no auto-retry).
 # 01:00 L-V: resume torrent downloads (overnight window).
+# 04:00 Sun: docker image prune -f — removes untagged images left by updates.
 # Weekends: containers run freely, no stop/start rules.
 log "Setting up cron jobs..."
 SUDOERS_FILE="/etc/sudoers.d/${MAIN_USER}-reboot"
@@ -188,10 +189,12 @@ CRON_STOP="0 8 * * 1-5    cd $REPO_DIR && docker compose stop decluttarr qbittor
 CRON_START="0 18 * * 1-5   cd $REPO_DIR && docker compose start gluetun && sleep 15 && docker compose start qbittorrent decluttarr"
 CRON_SEARCH="5 18 * * 1-5   $REPO_DIR/search-wanted.sh"
 CRON_RESUME="0 1 * * 1-5   $REPO_DIR/qbt.sh start"
+# Sun 04:00: drop dangling images left behind by `docker compose pull` on :latest tags.
+CRON_PRUNE="0 4 * * 0     docker image prune -f >/dev/null"
 
 (crontab -u "$MAIN_USER" -l 2>/dev/null \
-  | grep -v "qbt.sh\|sudo /usr/sbin/reboot\|docker compose stop\|docker compose start gluetun\|search-wanted.sh"; \
-  echo "$CRON_STOP"; echo "$CRON_START"; echo "$CRON_SEARCH"; echo "$CRON_RESUME"; echo "$CRON_REBOOT") \
+  | grep -v "qbt.sh\|sudo /usr/sbin/reboot\|docker compose stop\|docker compose start gluetun\|search-wanted.sh\|docker image prune"; \
+  echo "$CRON_STOP"; echo "$CRON_START"; echo "$CRON_SEARCH"; echo "$CRON_RESUME"; echo "$CRON_PRUNE"; echo "$CRON_REBOOT") \
   | crontab -u "$MAIN_USER" -
 
 
