@@ -119,6 +119,14 @@ if ! grep -q "gpu_mem=128" "$CONFIG"; then
     echo "gpu_mem=128" >> "$CONFIG"
 fi
 
+# ── 8b. SSH: do not accept LC_* from clients ──────────────────────────────────
+# macOS terminals send LC_CTYPE=UTF-8 (not a valid locale) and bash warns on every login.
+if grep -q "^AcceptEnv LANG LC_\* " /etc/ssh/sshd_config; then
+    log "Restricting sshd AcceptEnv to LANG (avoids setlocale warnings)..."
+    sed -i 's/^AcceptEnv LANG LC_\* /AcceptEnv LANG /' /etc/ssh/sshd_config
+    sshd -t && systemctl reload ssh
+fi
+
 # ── 9. VueTorrent ─────────────────────────────────────────────────────────────
 log "Installing VueTorrent..."
 VUETORRENT_ZIP=$(mktemp)
@@ -197,6 +205,8 @@ CRON_PRUNE="0 4 * * 0     docker image prune -f >/dev/null"
   echo "$CRON_STOP"; echo "$CRON_START"; echo "$CRON_SEARCH"; echo "$CRON_RESUME"; echo "$CRON_PRUNE"; echo "$CRON_REBOOT") \
   | crontab -u "$MAIN_USER" -
 
+# ── 12. SSH login banner ──────────────────────────────────────────────────────
+bash "$REPO_DIR/motd-setup.sh"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 IP=$(hostname -I | awk '{print $1}')

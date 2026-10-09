@@ -51,6 +51,8 @@ ssh pi@jellypi.local
 
 Si `jellypi.local` no resuelve, busca la IP del Pi en tu router.
 
+`setup.sh` instala un banner ASCII de jellyPi como `/etc/motd` (`motd.txt` + `motd-setup.sh`). También limita `AcceptEnv` de `sshd` a `LANG`: así los `LC_*` de la terminal del Mac (p. ej. `LC_CTYPE=UTF-8`, que no es un locale válido) no provocan avisos `bash: warning: setlocale` al entrar. En una Pi ya instalada: `sudo ./motd-setup.sh` (banner) y, para `AcceptEnv`, `sudo sed -i 's/^AcceptEnv LANG LC_\* /AcceptEnv LANG /' /etc/ssh/sshd_config && sudo sshd -t && sudo systemctl reload ssh`.
+
 ---
 
 ## 3. Setup del sistema
