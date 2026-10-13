@@ -411,6 +411,23 @@ docker compose restart homepage
 
 Pon `HOMEPAGE_THEME=cyberpunk` en `.env` para un look neón/oscuro (color de acento + superposición de scanlines + brillo en títulos y enlaces), luego vuelve a ejecutar `./homepage-setup.sh` y `docker compose restart homepage`. Déjalo sin definir (o con cualquier otro valor) para el look por defecto.
 
+### RomM (opcional) — `http://jellypi.local:8085`
+
+Gestor de ROMs con carátulas, metadatos y emulación en el navegador (la emulación corre en el cliente, no en la Pi). Es opt-in: usa el perfil `romm` de compose, así que no arranca salvo que `.env` tenga `COMPOSE_PROFILES=romm`.
+
+Las ROMs viven en `/mnt/storage/data/roms/<plataforma>/` y **el nombre de cada carpeta debe ser el slug de RomM** (`genesis`, `psx`, `tg16`, `sms`… — [lista](https://docs.romm.app/latest/platforms/supported-platforms/)). Los juegos multidisco van en una carpeta propia con sus discos y un `.m3u`.
+
+```bash
+./romm-setup.sh          # genera secretos en .env, activa el perfil y crea los directorios
+docker compose up -d     # ~1-2 min la primera vez (MariaDB)
+```
+
+Paso manual inevitable (RomM no tiene API para esto): abre la web, crea el usuario admin en el asistente y lanza el primer escaneo (Scan). Las fuentes recomendadas son ScreenScraper + RetroAchievements: crea una cuenta gratuita en cada una y pon `SCREENSCRAPER_USER`/`SCREENSCRAPER_PASSWORD` y `RETROACHIEVEMENTS_API_KEY` (retroachievements.org → Settings → Keys → Web API Key) en `.env` antes de `docker compose up -d`. Sin cuentas ya obtiene metadatos y carátulas por Hasheous; `IGDB_CLIENT_ID/SECRET` es opcional. Después: `./homepage-setup.sh` + `docker compose restart homepage` para la tarjeta.
+
+- El escaneo nocturno (modo Quick) y el vigilante de archivos detectan ROMs nuevas sin repetir el escaneo completo.
+- Carátulas y recursos en `$STORAGE/config/romm/resources`, base de datos en `config/romm/db`. `backup.sh` excluye `resources` y `redis` (se regeneran con un escaneo Complete).
+- El consumo de RAM de RomM + MariaDB no está medido en esta Pi: mide con `free -m` y quita `COMPOSE_PROFILES=romm` si Jellyfin se resiente.
+
 ### Portainer
 
 Homepage no permite reiniciar/parar contenedores desde sus propias tarjetas (limitación reconocida por el propio proyecto, fuera de su alcance) — para eso se añade **Portainer** (`http://jellypi.local:9000`), con tarjeta propia en la sección "System" de Homepage: gestor de contenedores con botones de start/stop/restart, logs y consola por contenedor. Al primer arranque, crea la cuenta admin desde el navegador (usuario/contraseña a tu elección).
@@ -569,6 +586,7 @@ Instala la app **Jellyfin** desde Google Play y añade el servidor `http://jelly
 | Tailscale    | acceso vía `100.x.x.x` |
 | FlareSolverr | 8191 |
 | Portainer    | 9000 |
+| RomM         | 8085 |
 
 ---
 

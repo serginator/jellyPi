@@ -407,6 +407,19 @@ docker compose restart homepage
 
 Set `HOMEPAGE_THEME=cyberpunk` in `.env` for a neon/dark look (accent color + scanline overlay + glowing headings/links), then re-run `./homepage-setup.sh` and `docker compose restart homepage`. Leave it unset (or anything else) for the default look.
 
+### RomM (optional) — `http://jellypi.local:8085`
+
+ROM manager with covers, metadata and in-browser emulation (emulation runs on the client, not on the Pi). Opt-in via the `romm` compose profile: it only starts when `.env` has `COMPOSE_PROFILES=romm`.
+
+ROMs live in `/mnt/storage/data/roms/<platform>/` and **each folder name must be RomM's platform slug** (`genesis`, `psx`, `tg16`, `sms`… — [list](https://docs.romm.app/latest/platforms/supported-platforms/)). Multi-disc games go in their own folder with the discs and an `.m3u`.
+
+```bash
+./romm-setup.sh          # generates secrets in .env, enables the profile, creates the dirs
+docker compose up -d     # ~1-2 min the first time (MariaDB)
+```
+
+Unavoidable manual step (RomM has no API for it): open the web UI, create the admin user in the wizard and run the first scan. Recommended sources are ScreenScraper + RetroAchievements: create a free account on each and set `SCREENSCRAPER_USER`/`SCREENSCRAPER_PASSWORD` and `RETROACHIEVEMENTS_API_KEY` (retroachievements.org → Settings → Keys → Web API Key) in `.env` before `docker compose up -d`. Without accounts, metadata and covers still work through Hasheous; `IGDB_CLIENT_ID/SECRET` is optional. Then `./homepage-setup.sh` + `docker compose restart homepage` for the dashboard card. `backup.sh` excludes `resources` and `redis` (a Complete scan regenerates them). RomM + MariaDB RAM use is not measured on this Pi: check with `free -m`, and remove `COMPOSE_PROFILES=romm` if Jellyfin suffers.
+
 ### Portainer
 
 Homepage has no way to restart/stop containers from its own cards (an acknowledged, out-of-scope limitation of the project) — **Portainer** (`http://jellypi.local:9000`) covers that, with its own card in Homepage's "System" section: container manager with start/stop/restart buttons, logs and a per-container console. On first boot, create the admin account from the browser (username/password of your choice).
@@ -566,6 +579,7 @@ Install the **Jellyfin** app from Google Play and add server `http://jellypi.loc
 | Tailscale    | access via `100.x.x.x` |
 | FlareSolverr | 8191 |
 | Portainer    | 9000 |
+| RomM         | 8085 |
 
 ---
 

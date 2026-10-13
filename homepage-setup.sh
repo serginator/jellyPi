@@ -203,6 +203,15 @@ $( [[ -n $SEERR_API_KEY ]] && cat <<EOF2
             key: "${SEERR_API_KEY}"
 EOF2
 )
+$( [[ ${COMPOSE_PROFILES:-} == *romm* ]] && cat <<EOF2
+    - RomM:
+        icon: romm.png
+        href: http://jellypi.local:8085
+        description: Retro games (ROM manager)
+        server: localhost
+        container: romm
+EOF2
+)
 
 - Downloads & Automation:
     - qBittorrent:

@@ -16,6 +16,8 @@ sudo tar czf "$OUT" \
   --exclude="mnt/storage/config/jellyfin/data/metadata" \
   --exclude="mnt/storage/config/jellyfin/data/transcodes" \
   --exclude="mnt/storage/config/jellyfin/log" \
+  --exclude="mnt/storage/config/romm/resources" \
+  --exclude="mnt/storage/config/romm/redis" \
   --exclude="*/logs" \
   -C / \
   "mnt/storage/config"

@@ -146,6 +146,67 @@ services:
     networks:
       - media
 
+  # RomM is opt-in: it only starts when COMPOSE_PROFILES=romm is set in .env
+  # (romm-setup.sh does that). Remove that line to stop managing it.
+  romm:
+    image: rommapp/romm:latest
+    container_name: romm
+    profiles: [romm]
+    environment:
+      - TZ=${TZ}
+      - DB_HOST=romm-db
+      - DB_NAME=romm
+      - DB_USER=romm
+      - DB_PASSWD=${ROMM_DB_PASSWORD}
+      - ROMM_AUTH_SECRET_KEY=${ROMM_AUTH_SECRET_KEY}
+      # Hasheous needs no account; the rest are optional extra metadata sources
+      - HASHEOUS_API_ENABLED=true
+      - IGDB_CLIENT_ID=${IGDB_CLIENT_ID:-}
+      - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET:-}
+      - SCREENSCRAPER_USER=${SCREENSCRAPER_USER:-}
+      - SCREENSCRAPER_PASSWORD=${SCREENSCRAPER_PASSWORD:-}
+      - RETROACHIEVEMENTS_API_KEY=${RETROACHIEVEMENTS_API_KEY:-}
+    volumes:
+      # RomM expects <library>/roms/<platform>; only roms/ is exposed
+      - ${STORAGE}/data/roms:/romm/library/roms
+      - ${STORAGE}/config/romm/resources:/romm/resources
+      - ${STORAGE}/config/romm/redis:/redis-data
+      - ${STORAGE}/config/romm/assets:/romm/assets
+      - ${STORAGE}/config/romm/config:/romm/config
+    ports:
+      - 8085:8080
+    depends_on:
+      romm-db:
+        condition: service_healthy
+        restart: true
+    restart: unless-stopped
+    networks:
+      - media
+
+  romm-db:
+    image: mariadb:latest
+    container_name: romm-db
+    profiles: [romm]
+    environment:
+      - MARIADB_ROOT_PASSWORD=${ROMM_DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=romm
+      - MARIADB_USER=romm
+      - MARIADB_PASSWORD=${ROMM_DB_PASSWORD}
+    # Smaller than the defaults: the Pi has ~3.7GB shared with everything else
+    command: --innodb-buffer-pool-size=64M --performance-schema=OFF
+    volumes:
+      - ${STORAGE}/config/romm/db:/var/lib/mysql
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      start_period: 30s
+      start_interval: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - media
+
   uptime-kuma:
     image: louislam/uptime-kuma:2
     container_name: uptime-kuma
