@@ -27,7 +27,7 @@ set -a; source "$ENV_FILE"; set +a
 
 STORAGE="${STORAGE:-/mnt/storage}"
 JF_URL="http://localhost:8096"
-JF_AUTH="X-Emby-Authorization: MediaBrowser Token=\"${JELLYFIN_API_KEY}\""
+JF_AUTH="Authorization: MediaBrowser Token=\"${JELLYFIN_API_KEY}\""
 PLUGINS_CONF="$STORAGE/config/jellyfin/data/plugins/configurations"
 SEERR_CONF="$PLUGINS_CONF/Jellyfin.Plugin.SeerrFin.xml"
 
@@ -63,7 +63,7 @@ import json, sys, urllib.request, urllib.parse
 JF_URL = "http://localhost:8096"
 API_KEY = "$(echo "$JELLYFIN_API_KEY" | sed "s/\"/\\\\\"/g")"
 HEADERS = {
-    "X-Emby-Authorization": f'MediaBrowser Token="{API_KEY}"',
+    "Authorization": f'MediaBrowser Token="{API_KEY}"',
     "Content-Type": "application/json",
 }
 
