@@ -36,6 +36,13 @@ fi
 chmod 600 "$ENV_FILE"
 
 mkdir -p "$STORAGE"/config/romm/{resources,redis,assets,config,db}
+# .ldci = disc-index files from the emulator; without this RomM lists each as a game
+[[ -s $STORAGE/config/romm/config/config.yml ]] || cat > "$STORAGE/config/romm/config/config.yml" <<'EOF'
+exclude:
+  roms:
+    single_file:
+      extensions: ["ldci"]
+EOF
 [[ -d $STORAGE/data/roms ]] || echo "AVISO: no existe $STORAGE/data/roms — RomM no verá ninguna ROM."
 
 echo ""
