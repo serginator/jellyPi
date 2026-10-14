@@ -160,6 +160,8 @@ services:
       - DB_PASSWD=${ROMM_DB_PASSWORD}
       - ROMM_AUTH_SECRET_KEY=${ROMM_AUTH_SECRET_KEY}
       # Hasheous needs no account; the rest are optional extra metadata sources
+      # API worker processes (default 4, ~135-200MB RSS each); 2 is plenty for one household
+      - WEB_SERVER_CONCURRENCY=2
       - HASHEOUS_API_ENABLED=true
       - IGDB_CLIENT_ID=${IGDB_CLIENT_ID:-}
       - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET:-}
