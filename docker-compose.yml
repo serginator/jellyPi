@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin:latest
+    image: lscr.io/linuxserver/jellyfin:${JELLYFIN_TAG:-latest}
     container_name: jellyfin
     dns:
       - 8.8.8.8
@@ -24,7 +24,7 @@ services:
       - media
 
   sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:${SONARR_TAG:-latest}
     container_name: sonarr
     environment:
       - PUID=${PUID}
@@ -41,7 +41,7 @@ services:
       - media
 
   radarr:
-    image: lscr.io/linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:${RADARR_TAG:-latest}
     container_name: radarr
     environment:
       - PUID=${PUID}
@@ -57,7 +57,7 @@ services:
       - media
 
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:${PROWLARR_TAG:-latest}
     container_name: prowlarr
     dns:
       - 8.8.8.8
@@ -99,7 +99,7 @@ services:
       - media
 
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:${QBITTORRENT_TAG:-latest}
     container_name: qbittorrent
     environment:
       - PUID=${PUID}
@@ -115,7 +115,7 @@ services:
     restart: unless-stopped
 
   bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
+    image: lscr.io/linuxserver/bazarr:${BAZARR_TAG:-latest}
     container_name: bazarr
     environment:
       - PUID=${PUID}
@@ -228,8 +228,8 @@ services:
       # Host-header check only (not auth) — safe to disable on a LAN/Tailscale-only stack
       - HOMEPAGE_ALLOWED_HOSTS=*
       # No PUID/PGID: Homepage needs to run as root to read /var/run/docker.sock
-      # directly (same reason diun has none either) — otherwise every service
-      # shows "unknown" status because it can't query container state at all.
+      # directly — otherwise every service shows "unknown" status because it
+      # can't query container state at all.
     volumes:
       - ${STORAGE}/config/homepage:/app/config
       - ${STORAGE}:/mnt/storage:ro
@@ -289,13 +289,17 @@ services:
       - LOG_LEVEL=info
       - DIUN_WATCH_WORKERS=20
       - DIUN_WATCH_SCHEDULE=0 6 * * *
-      - DIUN_PROVIDERS_DOCKER=true
-      - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true
-      - DIUN_NOTIF_TELEGRAM_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - DIUN_NOTIF_TELEGRAM_CHATIDS=${TELEGRAM_CHAT_ID}
+      # Image list lives in ./diun/images.yml (version-tag watching, no rebuild
+      # noise). Mounted as a directory: a git pull replaces the file's inode and
+      # a single-file bind mount would keep serving the old one.
+      - DIUN_PROVIDERS_FILE_FILENAME=/config/images.yml
+      # No Telegram notifier here: new tags are queued in /data/new-tags.txt and
+      # update-containers.py (cron, every 5 min) sends the approval message.
+      - DIUN_NOTIF_SCRIPT_CMD=sh
+      - DIUN_NOTIF_SCRIPT_ARGS=/config/notify.sh
     volumes:
       - ${STORAGE}/config/diun:/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./diun:/config:ro
     restart: unless-stopped
     networks:
       - media

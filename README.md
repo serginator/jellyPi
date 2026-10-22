@@ -524,9 +524,35 @@ docker compose restart decluttarr
 
 Re-run it whenever the API keys or qBittorrent password in `.env` change.
 
-### Diun (no UI)
+### Diun + container update manager
 
-Watches all containers for new image versions on their registry (all services here use `:latest`) and notifies via Telegram — it does **not** auto-update anything, just tells you when there's something new to pull. Reuses `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` from `.env`, no extra config needed. Checks daily at 6am (`DIUN_WATCH_SCHEDULE`).
+Diun watches the registry of every service image; `update-containers.py` (cron) turns what Diun finds into Telegram approval messages and applies the updates. Nothing is updated without your approval, except same-version rebuilds (below). Reuses `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` from `.env`. Diun checks daily at 6am (`DIUN_WATCH_SCHEDULE`). Installed by `update-setup.sh` (called from `post-setup.sh` when the Telegram variables are set; safe to re-run).
+
+**Diun: new versions only, no rebuild noise.** All services use `:latest`, and watching that tag by digest fires on every rebuild (base-image bumps, packaging tweaks) even when the app version is unchanged. So Diun does not watch `:latest`: `diun/images.yml` lists each image with a tag filter (`include_tags`) that matches only release tags (`version-<x>` for `lscr.io/linuxserver/*`, `vX.Y.Z` / `X.Y.Z` for the rest) and reports only tags it has never seen. Instead of notifying Telegram itself, Diun appends each new tag to a queue (`diun/notify.sh` → `/data/new-tags.txt` in the diun container).
+
+- **New service → add an entry to `diun/images.yml`.** Images are not auto-discovered from the compose file. Diun re-reads the file on every scan; no restart needed.
+- The first scan of an image is silent, so a new entry (or a first deploy) doesn't flood Telegram. The very first scan takes several minutes (one manifest per matching tag).
+- Docker Hub images are limited to the 3 newest tags (`max_tags`) to stay under Docker Hub's anonymous pull limit.
+
+**New version → approval by Telegram.** `update-containers.py poll` runs every 5 minutes (cron). For each queued tag it sends a message with the version jump (patch / minor / MAJOR), risk keywords found in the release notes (breaking, deprecated, removed, migrate…), whether the notes mention security fixes, a link, and **✅ Actualizar / ⏭ Omitir** buttons. After you press ✅ (it reacts within 5 minutes):
+
+1. Per-service config backup to `backups/auto/<service>-<date>.tar.gz` (last 2 kept). It does not use `sudo` (cron cannot): it reads the config dirs through a helper container, so root-owned dirs work too. Only the services being updated are stopped, not the whole stack like `backup.sh`.
+2. Pull, recreate, and wait for the service's health check (Jellyfin takes ~5 min). `gluetun` always takes `qbittorrent` with it; `decluttarr` is restarted afterwards.
+3. If the health check fails: previous image restored; for a version bump the previous config too (the failed one is kept as `<dir>.failed-<date>`). The Telegram report says what happened.
+4. Services stopped by the weekday pause (`gluetun`, `qbittorrent`, `decluttarr`, 08:00–18:00 Mon–Fri) get the new image but stay stopped until the 18:00 cron.
+
+The risk keywords are a hint, **not a guarantee** that there are no breaking changes (Jellyfin 12 changed its auth header with no keyword in sight). The backup and the rollback are the safety net.
+
+**Same-version rebuilds → automatic, Sunday 09:00.** Every linuxserver service is pinned to its `version-<app version>` tag with `<SERVICE>_TAG` in `.env` (e.g. `SONARR_TAG=version-4.0.20.3014`; `update-setup.sh` writes them from the running containers). That tag moves to the latest *rebuild of the same version*, so a pull can only bring base-image/security patches, never a new app version. `update-containers.py rebuilds` pulls them and, if anything changed, applies it with the same backup/health/rollback steps and reports on Telegram (silent when nothing changed). Sunday 09:00 is after the 08:05 reboot and the 04:00 image prune. Approving a version bump moves the pin. Other images (`gluetun`, `tailscale`, …) are not pinned: they only change through an approval.
+
+Useful commands (on the Pi, in `~/jellypi`):
+```bash
+./update-containers.py status                     # running versions + pending approvals
+./update-containers.py apply sonarr               # update now, no approval step
+./update-containers.py rebuilds --quiet           # run the weekly job by hand, no Telegram
+tail -f /mnt/storage/config/update-bot/update.log
+```
+Only the chat in `TELEGRAM_CHAT_ID` can press the buttons — keep it a private chat with the bot. Optional `GITHUB_TOKEN` in `.env` raises GitHub's anonymous rate limit (60 requests/hour) used to read release notes.
 
 ### Telegram notifications
 

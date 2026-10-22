@@ -53,8 +53,14 @@ Any setup task (new service, plugin, integration) must be **100% automated** via
   reconnect on its own if gluetun's network namespace changes).
 - `.env` holds plaintext credentials and is in `.gitignore` — never commit
   real values; `env.example` is the public template.
-- All services use `:latest` — before `docker compose pull/up -d`, check the
-  image's changelog/release notes if Diun notified an update, and back up
-  first with `backup.sh`.
+- Container updates go through `update-containers.py` (Telegram approval +
+  per-service backup + health check + rollback; same-version rebuilds run on
+  their own Sunday 09:00). Installed by `update-setup.sh`. linuxserver images
+  are pinned to `version-<x>` via `<SERVICE>_TAG` in `.env` (compose falls back
+  to `:latest` if unset); the other services stay on `:latest`. Diun's image
+  list is `diun/images.yml` and is **not** auto-discovered: add an entry when
+  you add a service. To update by hand, read the changelog first and back up
+  with `backup.sh` (or use `./update-containers.py apply <service>`, which backs
+  up that service itself).
 - Don't run `git commit`/`git push` unless the user explicitly asks for it in
   that same conversation, even if they approved the file changes.

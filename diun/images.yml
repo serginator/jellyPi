@@ -1,0 +1,114 @@
+# Diun image list: notify only when a NEW VERSION is published, not on rebuilds.
+#
+# Every service uses :latest (or a floating major), and watching that tag by
+# digest fires on every rebuild (base-image bumps, "add krb5-libs", ...). So
+# instead each entry watches the repo's tags (watch_repo) filtered to release
+# tags with include_tags, and notifies only for tags it has never seen
+# (notify_on: new). The first scan of an image is silent (watch.firstCheckNotif
+# is false), so adding an entry does not flood Telegram.
+#
+# - lscr.io/linuxserver/*: `version-<app version>` is the per-release tag. The
+#   `<version>-lsNNN` tags change on every rebuild, so they are not matched.
+# - Docker Hub images: max_tags + sort_tags semver bound the work. Diun GETs one
+#   manifest per tag and Docker Hub allows ~100 anonymous pulls per 6 hours.
+# - ghcr.io images have no such limit, so all matching tags are watched.
+#
+# Adding a service: add an entry here (it is NOT auto-discovered from compose).
+# Diun re-reads this file on every scan, no restart needed.
+
+# --- linuxserver (ghcr-backed) ---
+- name: lscr.io/linuxserver/jellyfin:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+- name: lscr.io/linuxserver/sonarr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+- name: lscr.io/linuxserver/radarr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+- name: lscr.io/linuxserver/prowlarr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+- name: lscr.io/linuxserver/bazarr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+- name: lscr.io/linuxserver/qbittorrent:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^version-v?\d+\.\d+']
+
+# --- ghcr.io ---
+- name: ghcr.io/gethomepage/homepage:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^v\d+\.\d+\.\d+$']
+- name: ghcr.io/manimatter/decluttarr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^v\d+\.\d+\.\d+$']
+- name: ghcr.io/flaresolverr/flaresolverr:latest
+  watch_repo: true
+  notify_on: [new]
+  include_tags: ['^v\d+\.\d+\.\d+$']
+
+# --- Docker Hub (bounded) ---
+# gluetun: `latest` tracks master; notify only for tagged releases.
+- name: docker.io/qmcgaw/gluetun:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^v\d+\.\d+\.\d+$']
+- name: docker.io/tailscale/tailscale:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^v\d+\.\d+\.\d+$']
+- name: docker.io/seerr/seerr:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^v\d+\.\d+\.\d+$']
+- name: docker.io/portainer/portainer-ce:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']
+- name: docker.io/rommapp/romm:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']
+- name: docker.io/library/mariadb:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']
+- name: docker.io/louislam/uptime-kuma:2
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']
+- name: docker.io/golift/unpackerr:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']
+- name: docker.io/crazymax/diun:latest
+  watch_repo: true
+  notify_on: [new]
+  sort_tags: semver
+  max_tags: 3
+  include_tags: ['^\d+\.\d+\.\d+$']

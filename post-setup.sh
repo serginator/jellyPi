@@ -65,8 +65,10 @@ fi
 if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${TELEGRAM_CHAT_ID:-}" ]]; then
     echo "Configurando notificaciones de Telegram..."
     "$DIR/telegram-setup.sh"
+    echo "Configurando el gestor de actualizaciones de contenedores..."
+    "$DIR/update-setup.sh"
 else
-    echo "TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID vacíos en .env, omito notificaciones de Telegram."
+    echo "TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID vacíos en .env, omito notificaciones de Telegram y el gestor de actualizaciones."
 fi
 
 if [[ -n "${QBITTORRENT_PASSWORD:-}" ]]; then
