@@ -122,22 +122,21 @@ docker compose restart qbittorrent
 | Límite de subida | 1200 KiB/s |
 | Ratio máx | 0.2 (pausa al completar)
 
-> Aumentado desde los límites originales más conservadores (50/10 conexiones, 500 KiB/s de subida) tras añadir Gluetun: el túnel VPN aparece como una única conexión de cara al router doméstico (en vez de una por cada peer), así que la saturación de la tabla de conexiones del router deja de ser un problema. El horario de descarga (ver abajo) sigue manteniendo toda la actividad de torrents parada en horario laboral.
+> Aumentado desde los límites originales más conservadores (50/10 conexiones, 500 KiB/s de subida) tras añadir Gluetun: el túnel VPN aparece como una única conexión de cara al router doméstico (en vez de una por cada peer), así que la saturación de la tabla de conexiones del router deja de ser un problema.
 
-**Horario de descarga y pausa por horario laboral** (cron instalado por `setup.sh`):
+**Tareas cron** (instaladas por `setup.sh`). `gluetun`, `qbittorrent` y `decluttarr` corren todo el día, todos los días:
 
 | Hora | Días | Acción |
 |------|------|--------|
-| `01:00` | L-V | `qbt.sh start` — reanuda descargas (ventana nocturna) |
-| `08:00` | L-V | Para contenedores `decluttarr`, `qbittorrent` y `gluetun` antes del reinicio (sin qBittorrent, decluttarr sale cada ~40s y entra en bucle de reinicios) |
-| `08:05` | todos | Reinicio diario (los contenedores parados no vuelven con `unless-stopped`) |
-| `18:00` | L-V | Relanza `gluetun`, espera 15s, luego `qbittorrent` y `decluttarr` |
+| `@reboot` | — | `decluttarr-after-boot.sh` — reinicia `decluttarr` cuando Sonarr, Radarr y qBittorrent responden (decluttarr los comprueba solo al arrancar y no reintenta) |
+| `08:05` | todos | Reinicio diario |
 | `04:00` | domingo | `docker image prune -f` — borra imágenes sin etiqueta que dejan las actualizaciones |
-| fines de semana | — | Sin restricciones, los contenedores corren libremente |
+
+Si el tráfico de torrents estropea las llamadas por WiFi en horario laboral, pausa los torrents sin parar los contenedores: añade `0 8 * * 1-5 ~/jellypi/qbt.sh stop` y `0 18 * * 1-5 ~/jellypi/qbt.sh start` al crontab.
 
 > `qbt.sh` hace login en la API en cada llamada — qBittorrent 5.x ignora el bypass de auth para localhost. Actualiza la contraseña en el script si la cambias en qBittorrent.
 
-**Reinicio diario**: `08:05` — limpia cualquier estado atascado (fugas de memoria, sockets colgados) sin intervención. En días laborables, los contenedores `qbittorrent` y `gluetun` se paran a las `08:00` justo antes, de modo que `unless-stopped` evita que vuelvan a arrancar solos tras el reinicio. Instalado por `setup.sh` mediante una regla de sudoers limitada a `NOPASSWD: /usr/sbin/reboot` (nada más) para el usuario principal, así el cron no necesita contraseña. Comprobar con `sudo cat /etc/sudoers.d/<usuario>-reboot` y `crontab -l`.
+**Reinicio diario**: `08:05` — limpia cualquier estado atascado (fugas de memoria, sockets colgados) sin intervención. Todos los contenedores vuelven tras el reinicio (`unless-stopped`). Instalado por `setup.sh` mediante una regla de sudoers limitada a `NOPASSWD: /usr/sbin/reboot` (nada más) para el usuario principal, así el cron no necesita contraseña. Comprobar con `sudo cat /etc/sudoers.d/<usuario>-reboot` y `crontab -l`.
 
 En **Tools → Options → Downloads**, pon Default Save Path a `/data/torrents`.
 
@@ -370,12 +369,7 @@ Elige SQLite en el primer arranque. Añade un monitor HTTP(s) por servicio:
 | qBittorrent | `http://gluetun:8080` |
 | Bazarr | `http://bazarr:6767` |
 
-**Ventana de mantenimiento para qBittorrent** (evita alertas falsas durante la parada laboral): en el menú lateral, ve a **Maintenance → Create** y configura:
-- Estrategia: **Periódico - Día de la semana**, L-V
-- Ventana: `08:00 - 18:00`
-- Monitor afectado: qBittorrent
-
-Así Uptime Kuma suprime las notificaciones durante la parada pero sigue alertando si cae fuera de ese horario.
+> qBittorrent ya no se para entre semana, así que no necesita ventana de mantenimiento en Uptime Kuma. Si creaste la antigua de `08:00 - 18:00`, bórrala.
 
 ### Homepage (dashboard) — `http://jellypi.local:3000`
 
@@ -547,7 +541,7 @@ Diun vigila el registro de la imagen de cada servicio; `update-containers.py` (c
 1. Backup de la config de cada servicio en `backups/auto/<servicio>-<fecha>.tar.gz` (se guardan los 2 últimos). No usa `sudo` (el cron no puede): lee los directorios de config a través de un contenedor auxiliar, así que sirve también para los directorios de root. Solo se para el servicio que se actualiza, no todo el stack como hace `backup.sh`.
 2. Pull, recreación y espera a que pase el healthcheck del servicio (Jellyfin tarda ~5 min). `gluetun` siempre arrastra a `qbittorrent`; `decluttarr` se reinicia después.
 3. Si el healthcheck falla: se restaura la imagen anterior; en una subida de versión, también la config anterior (la fallida se conserva como `<dir>.failed-<fecha>`). El informe de Telegram cuenta qué pasó.
-4. Los servicios parados por la pausa laboral (`gluetun`, `qbittorrent`, `decluttarr`, 08:00–18:00 L-V) reciben la imagen nueva pero siguen parados hasta el cron de las 18:00.
+4. Los servicios que estaban parados a mano reciben la imagen nueva pero siguen parados.
 
 Las palabras de riesgo son una pista, **no una garantía** de que no haya cambios que rompan algo (Jellyfin 12 cambió su cabecera de autenticación sin ninguna palabra clave a la vista). La red de seguridad son el backup y el rollback.
 

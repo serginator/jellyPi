@@ -165,44 +165,39 @@ else
     warn "qBittorrent config already exists, skipping (edit manually if needed)"
 fi
 
-# ── 11. qBittorrent schedule script + cron ────────────────────────────────────
-log "Setting up qBittorrent schedule..."
+# ── 11. qBittorrent helper script ─────────────────────────────────────────────
+log "Setting up qBittorrent helper script..."
 REPO_DIR=$(eval echo "~$MAIN_USER/jellypi")
 chmod +x "$REPO_DIR/qbt.sh"
 chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/qbt.sh"
 
-# ── 12. Cron: daily reboot + working-hours container pause (Mon-Fri) ──────────
-# 08:00 L-V: stop decluttarr + qbittorrent + gluetun before the reboot.
-#            All use restart:unless-stopped → they won't come back after reboot.
-#            decluttarr exits every ~40s without qbittorrent → restart loop.
+# ── 12. Cron: daily reboot + post-boot decluttarr restart ─────────────────────
+# gluetun, qbittorrent and decluttarr run all day (restart: unless-stopped).
+# If torrent traffic hurts WiFi calls during work hours, add: 0 8 * * 1-5 qbt.sh stop
+#                                                              0 18 * * 1-5 qbt.sh start
 # 08:05 daily: reboot — clears stuck state (memory leaks, hung sockets).
 #              Scoped sudoers rule: only allows rebooting, nothing else.
-# 18:00 L-V: restart gluetun, wait 15s for tunnel, then start qbittorrent.
-# 18:05 L-V: search-wanted.sh — retries any Sonarr/Radarr grabs that failed
-#            while qBittorrent was stopped (API calls fail silently, no auto-retry).
-# 01:00 L-V: resume torrent downloads (overnight window).
+# @reboot:     decluttarr-after-boot.sh — restarts decluttarr once Sonarr/Radarr/qBittorrent
+#              answer (it checks them only at startup and does not retry).
 # 04:00 Sun: docker image prune -f — removes untagged images left by updates.
-# Weekends: containers run freely, no stop/start rules.
 log "Setting up cron jobs..."
 SUDOERS_FILE="/etc/sudoers.d/${MAIN_USER}-reboot"
 echo "$MAIN_USER ALL=(root) NOPASSWD: /usr/sbin/reboot" > "$SUDOERS_FILE"
 chmod 0440 "$SUDOERS_FILE"
 visudo -cf "$SUDOERS_FILE" || die "Invalid sudoers rule for reboot"
 
-chmod +x "$REPO_DIR/search-wanted.sh"
-chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/search-wanted.sh"
+chmod +x "$REPO_DIR/decluttarr-after-boot.sh"
+chown "$MAIN_USER:$MAIN_USER" "$REPO_DIR/decluttarr-after-boot.sh"
 
 CRON_REBOOT="5 8 * * *      sudo /usr/sbin/reboot"
-CRON_STOP="0 8 * * 1-5    cd $REPO_DIR && docker compose stop decluttarr qbittorrent && docker compose stop gluetun"
-CRON_START="0 18 * * 1-5   cd $REPO_DIR && docker compose start gluetun && sleep 15 && docker compose start qbittorrent decluttarr"
-CRON_SEARCH="5 18 * * 1-5   $REPO_DIR/search-wanted.sh"
-CRON_RESUME="0 1 * * 1-5   $REPO_DIR/qbt.sh start"
+CRON_BOOT="@reboot        $REPO_DIR/decluttarr-after-boot.sh"
 # Sun 04:00: drop dangling images left behind by `docker compose pull` on :latest tags.
 CRON_PRUNE="0 4 * * 0     docker image prune -f >/dev/null"
 
+# The grep also removes the old weekday-pause entries (stop/start containers, search-wanted, qbt.sh start).
 (crontab -u "$MAIN_USER" -l 2>/dev/null \
-  | grep -v "qbt.sh\|sudo /usr/sbin/reboot\|docker compose stop\|docker compose start gluetun\|search-wanted.sh\|docker image prune"; \
-  echo "$CRON_STOP"; echo "$CRON_START"; echo "$CRON_SEARCH"; echo "$CRON_RESUME"; echo "$CRON_PRUNE"; echo "$CRON_REBOOT") \
+  | grep -v "qbt.sh\|sudo /usr/sbin/reboot\|docker compose stop\|docker compose start gluetun\|search-wanted.sh\|decluttarr-after-boot.sh\|docker image prune"; \
+  echo "$CRON_BOOT"; echo "$CRON_PRUNE"; echo "$CRON_REBOOT") \
   | crontab -u "$MAIN_USER" -
 
 # ── 12. SSH login banner ──────────────────────────────────────────────────────

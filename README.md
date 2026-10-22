@@ -122,22 +122,21 @@ docker compose restart qbittorrent
 | Upload speed limit | 1200 KiB/s |
 | Max ratio | 0.2 (pause on completion) |
 
-> Raised from the original conservative limits (50/10 connections, 500 KiB/s upload) after adding Gluetun: the VPN tunnel appears as a single connection to the home router (instead of one per peer), so router conntrack saturation is no longer a concern. The download schedule (see below) still keeps all torrent activity off during work hours.
+> Raised from the original conservative limits (50/10 connections, 500 KiB/s upload) after adding Gluetun: the VPN tunnel appears as a single connection to the home router (instead of one per peer), so router conntrack saturation is no longer a concern.
 
-**Download schedule and working-hours pause** (cron installed by `setup.sh`):
+**Cron jobs** (installed by `setup.sh`). `gluetun`, `qbittorrent` and `decluttarr` run all day, every day:
 
 | Time | Days | Action |
 |------|------|--------|
-| `01:00` | Mon-Fri | `qbt.sh start` — resume downloads (overnight window) |
-| `08:00` | Mon-Fri | Stop `decluttarr`, `qbittorrent` and `gluetun` containers before reboot (without qBittorrent, decluttarr exits every ~40s and restart-loops) |
-| `08:05` | daily | Daily reboot (containers stopped won't restart with `unless-stopped`) |
-| `18:00` | Mon-Fri | Restart `gluetun`, wait 15s, then start `qbittorrent` and `decluttarr` |
+| `@reboot` | — | `decluttarr-after-boot.sh` — restart `decluttarr` once Sonarr, Radarr and qBittorrent answer (decluttarr checks them only at startup and never retries) |
+| `08:05` | daily | Daily reboot |
 | `04:00` | Sun | `docker image prune -f` — remove untagged images left behind by container updates |
-| weekends | — | No restrictions, containers run freely |
+
+If torrent traffic hurts WiFi calls during work hours, pause the torrents without stopping the containers: add `0 8 * * 1-5 ~/jellypi/qbt.sh stop` and `0 18 * * 1-5 ~/jellypi/qbt.sh start` to the crontab.
 
 > `qbt.sh` authenticates via API on each call — qBittorrent 5.x ignores the localhost auth bypass. Update the password in the script if you change it in qBittorrent.
 
-**Daily reboot**: `08:05` — clears any stuck state (memory leaks, hung sockets) unattended. On weekdays, `qbittorrent` and `gluetun` are stopped at `08:00` just before, so `unless-stopped` prevents them from restarting after the reboot. Installed by `setup.sh` via a sudoers rule scoped to `NOPASSWD: /usr/sbin/reboot` only (nothing else) for the main user, so the cron job doesn't need a password. Check with `sudo cat /etc/sudoers.d/<user>-reboot` and `crontab -l`.
+**Daily reboot**: `08:05` — clears any stuck state (memory leaks, hung sockets) unattended. All containers come back after the reboot (`unless-stopped`). Installed by `setup.sh` via a sudoers rule scoped to `NOPASSWD: /usr/sbin/reboot` only (nothing else) for the main user, so the cron job doesn't need a password. Check with `sudo cat /etc/sudoers.d/<user>-reboot` and `crontab -l`.
 
 In **Tools → Options → Downloads**, set Default Save Path to `/data/torrents`.
 
@@ -366,12 +365,7 @@ Choose SQLite on first run. Add one HTTP(s) monitor per service:
 | qBittorrent | `http://gluetun:8080` |
 | Bazarr | `http://bazarr:6767` |
 
-**Maintenance window for qBittorrent** (suppresses false alerts during the weekday stop): in the sidebar, go to **Maintenance → Create** and set:
-- Strategy: **Recurring - Day of Week**, Mon-Fri
-- Window: `08:00 - 18:00`
-- Affected monitor: qBittorrent
-
-This suppresses notifications during the scheduled stop but still alerts if qBittorrent goes down outside that window.
+> qBittorrent no longer stops on weekdays, so it needs no Uptime Kuma maintenance window. If you created the old `08:00 - 18:00` one, delete it.
 
 ### Homepage (dashboard) — `http://jellypi.local:3000`
 
@@ -539,7 +533,7 @@ Diun watches the registry of every service image; `update-containers.py` (cron) 
 1. Per-service config backup to `backups/auto/<service>-<date>.tar.gz` (last 2 kept). It does not use `sudo` (cron cannot): it reads the config dirs through a helper container, so root-owned dirs work too. Only the services being updated are stopped, not the whole stack like `backup.sh`.
 2. Pull, recreate, and wait for the service's health check (Jellyfin takes ~5 min). `gluetun` always takes `qbittorrent` with it; `decluttarr` is restarted afterwards.
 3. If the health check fails: previous image restored; for a version bump the previous config too (the failed one is kept as `<dir>.failed-<date>`). The Telegram report says what happened.
-4. Services stopped by the weekday pause (`gluetun`, `qbittorrent`, `decluttarr`, 08:00–18:00 Mon–Fri) get the new image but stay stopped until the 18:00 cron.
+4. Services that were stopped by hand get the new image but stay stopped.
 
 The risk keywords are a hint, **not a guarantee** that there are no breaking changes (Jellyfin 12 changed its auth header with no keyword in sight). The backup and the rollback are the safety net.
 

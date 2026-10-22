@@ -750,7 +750,7 @@ def apply(items):
             failed.append(s)
             # dependents hang off the broken network namespace
             failed += [d for d in DEPENDENTS.get(s, []) if d in running and d not in failed]
-    for s in stopped:                      # weekday pause: new image, but stay stopped
+    for s in stopped:                      # was stopped by hand: new image, but stay stopped
         compose("up", "--no-start", "--no-deps", "--force-recreate", s, timeout=600)
 
     rolled = {}
@@ -780,7 +780,7 @@ def apply(items):
             ver = current_version(s, load_state())
             res["ok"].append(s)
             res["versions"][s] = ver
-            how = "estaba parado (L-V): queda parado, arrancará con el cron de las 18:00" if s in stopped else f"sano en {health.get(s, 0)} s"
+            how = "estaba parado: queda parado hasta que lo arranques" if s in stopped else f"sano en {health.get(s, 0)} s"
             line = f"✅ <b>{s}</b>: {html.escape(before_ver.get(s) or '?')} → {html.escape(ver or '?')} ({how})"
             if backups.get(s):
                 line += f"\nBackup: <code>{backups[s].name}</code>"
