@@ -124,6 +124,11 @@ RISK_RE = re.compile(
     re.IGNORECASE,
 )
 SECURITY_RE = re.compile(r"security|\bCVE-\d", re.IGNORECASE)
+PRERELEASE_RE = re.compile(r"unstable|nightly|alpha|beta|preview|develop|\brc\d*", re.IGNORECASE)
+# Diun queues every tag it has never seen. In normal operation that is a handful
+# per day; a burst means it is seeding a repo (first scan with a non-empty Diun
+# DB, or a new entry in diun/images.yml), not that 300 versions were released.
+FLOOD_LIMIT = 15
 ERROR_MSG_EVERY = timedelta(hours=6)   # don't spam Telegram if a cron job keeps failing
 
 log = logging.getLogger("update-containers")
@@ -493,14 +498,26 @@ def ingest_queue(st):
     lines = read_queue()
     if not lines:          # None = diun unreachable, [] = nothing queued (most runs)
         return
+    entries = list(dict.fromkeys(lines))
+    if len(entries) > FLOOD_LIMIT:
+        log.warning("Diun queued %d tags at once: treating as a seeding scan and dropping them", len(entries))
+        ack_queue()
+        with contextlib.suppress(Exception):
+            send(f"ℹ️ Diun ha encolado {len(entries)} tags de golpe (parece un primer escaneo de imágenes "
+                 "nuevas). Los he ignorado: no es una avalancha de versiones nuevas.")
+        return
     model = compose_model()
     by_repo = {norm_repo(s["image"]): n for n, s in model.items()}
-    for image in dict.fromkeys(lines):
-        svc = by_repo.get(norm_repo(image))
-        tag = image_tag(image)
-        if not svc or tag == "latest":
+    newest = {}   # one proposal per service: the newest tag of this batch
+    for image in entries:
+        svc, tag = by_repo.get(norm_repo(image)), image_tag(image)
+        if not svc or tag == "latest" or PRERELEASE_RE.search(tag):
             log.info("ignoring queue entry %s", image)
             continue
+        if svc not in newest or all_ints(tag) > all_ints(image_tag(newest[svc][1])):
+            newest[svc] = (svc, image)
+    for svc, image in newest.values():
+        tag = image_tag(image)
         key = f"{svc}|{tag}"
         cur = current_version(svc, st)
         if key in st["seen"] or (cur and all_ints(tag) <= all_ints(cur)):

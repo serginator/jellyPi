@@ -4,8 +4,10 @@
 # digest fires on every rebuild (base-image bumps, "add krb5-libs", ...). So
 # instead each entry watches the repo's tags (watch_repo) filtered to release
 # tags with include_tags, and notifies only for tags it has never seen
-# (notify_on: new). The first scan of an image is silent (watch.firstCheckNotif
-# is false), so adding an entry does not flood Telegram.
+# (notify_on: new). Pre-release tags (unstable, nightly, beta, rc...) are excluded.
+# Diun only skips notifying on its very first scan when its DB is EMPTY. With an
+# existing DB, a new entry queues every matching tag, so update-containers.py
+# drops any burst above FLOOD_LIMIT tags instead of asking about each one.
 #
 # - lscr.io/linuxserver/*: `version-<app version>` is the per-release tag. The
 #   `<version>-lsNNN` tags change on every rebuild, so they are not matched.
@@ -21,40 +23,49 @@
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: lscr.io/linuxserver/sonarr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: lscr.io/linuxserver/radarr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: lscr.io/linuxserver/prowlarr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: lscr.io/linuxserver/bazarr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: lscr.io/linuxserver/qbittorrent:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^version-v?\d+\.\d+']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 
 # --- ghcr.io ---
 - name: ghcr.io/gethomepage/homepage:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: ghcr.io/manimatter/decluttarr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: ghcr.io/flaresolverr/flaresolverr:latest
   watch_repo: true
   notify_on: [new]
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 
 # --- Docker Hub (bounded) ---
 # gluetun: `latest` tracks master; notify only for tagged releases.
@@ -64,51 +75,60 @@
   sort_tags: semver
   max_tags: 3
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/tailscale/tailscale:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/seerr/seerr:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^v\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/portainer/portainer-ce:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/rommapp/romm:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/library/mariadb:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/louislam/uptime-kuma:2
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/golift/unpackerr:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
 - name: docker.io/crazymax/diun:latest
   watch_repo: true
   notify_on: [new]
   sort_tags: semver
   max_tags: 3
   include_tags: ['^\d+\.\d+\.\d+$']
+  exclude_tags: ['unstable', 'nightly', 'alpha', 'beta', 'preview', 'develop', '-rc']
