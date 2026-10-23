@@ -469,6 +469,19 @@ def send(text, buttons=None):
     return tg("sendMessage", **params)
 
 
+def answer(callback_id, text):
+    # Telegram rejects the answer once the press is a few seconds old (cron polls every 5 min),
+    # and that must not abort the poll before the press is saved.
+    with contextlib.suppress(Exception):
+        tg("answerCallbackQuery", callback_query_id=callback_id, text=text)
+
+
+def delete_message(message_id):
+    # Bots can only delete their own messages younger than 48 h; failing to is harmless.
+    with contextlib.suppress(Exception):
+        tg("deleteMessage", chat_id=chat_id(), message_id=message_id)
+
+
 def clear_buttons(message_id):
     with contextlib.suppress(Exception):
         tg("editMessageReplyMarkup", chat_id=chat_id(), message_id=message_id,
@@ -817,22 +830,23 @@ def cmd_poll(args):
             msg = cq.get("message") or {}
             if (msg.get("chat") or {}).get("id") != chat_id():
                 log.warning("callback from unauthorized chat ignored")
-                tg("answerCallbackQuery", callback_query_id=cq["id"], text="No autorizado")
+                answer(cq["id"], "No autorizado")
                 continue
             action, _, pid = (cq.get("data") or "").partition(":")
             item = st["pending"].get(pid)
             if not item or item["status"] != "pending" or action not in ("ok", "skip"):
-                tg("answerCallbackQuery", callback_query_id=cq["id"], text="Caducado o ya procesado")
+                answer(cq["id"], "Caducado o ya procesado")
                 clear_buttons(msg.get("message_id"))
                 continue
-            clear_buttons(item["message_id"])
             if action == "skip":
+                delete_message(item["message_id"])
                 item["status"] = "skipped"
-                tg("answerCallbackQuery", callback_query_id=cq["id"], text="Omitida")
+                answer(cq["id"], "Omitida")
             else:
+                clear_buttons(item["message_id"])
                 item["status"] = "approved"
                 approved.append(item)
-                tg("answerCallbackQuery", callback_query_id=cq["id"], text="Aprobada: actualizando…")
+                answer(cq["id"], "Aprobada: actualizando…")
         for p in list(approved):   # an apply that keeps crashing must not loop every 5 min
             p["attempts"] = p.get("attempts", 0) + 1
             if p["attempts"] > 2:
@@ -843,14 +857,20 @@ def cmd_poll(args):
         save_state(st)
         if not approved:
             return
-        send("⏳ Actualizando: " + ", ".join(f"{p['service']} → {p['tag']}" for p in approved)
-             + ". Puede tardar varios minutos (Jellyfin ~5).")
+        busy = send("⏳ Actualizando: " + ", ".join(f"{p['service']} → {p['tag']}" for p in approved)
+                    + ". Puede tardar varios minutos (Jellyfin ~5).")
         res = apply([{"service": p["service"], "tag": p["tag"], "kind": "bump"} for p in approved])
         for p in approved:
             p["status"] = "failed" if p["service"] in res["failed"] else "done"
             if p["status"] == "done" and p["service"] not in res["nochange"]:
                 st["applied"][p["service"]] = p["tag"]
         save_state(st)
+        # Only the result stays in the chat: the progress note and the approved requests are noise now.
+        # A failed service keeps its request message for context.
+        delete_message(busy["message_id"])
+        for p in approved:
+            if p["status"] == "done":
+                delete_message(p["message_id"])
         report("🔧 <b>Resultado de la actualización</b>", res)
 
 
