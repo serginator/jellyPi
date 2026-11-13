@@ -185,6 +185,8 @@ En el primer acceso: **Authentication Required → Disabled for Local Addresses*
 | `Hardcoded Subs` | `dubbed\|hardcoded\|hard.?sub\|hcsub\|\bhs\b` | `-10000` |
 | `Trusted Anime Groups` | `subsplease\|erai.raws\|kawaiika.raws` | `+100` |
 
+**Release Profile global** (Settings → Profiles → Release Profiles, sin tags): `post-setup.sh` lo crea con `Must Not Contain` = `English Dub`, `Dub]` y `SUBFRENCH` (rechaza cualquier release con esos textos, sin importar mayúsculas). Para ignorar otro texto, añádelo a `SONARR_IGNORED` en `post-setup.sh` y vuelve a ejecutarlo (es idempotente).
+
 Bazarr añade subtítulos en español automáticamente — no filtres por "spanish" en Nyaa.
 
 **Quality Definitions** (Settings → Quality) — configura los límites de tamaño para `Bluray-1080p`:

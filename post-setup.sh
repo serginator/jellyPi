@@ -62,6 +62,33 @@ else
     echo "Restricción 'HQ Pre' añadida a Radarr."
 fi
 
+echo "Configurando restricciones de release en Sonarr..."
+# Perfil global (sin tags): rechaza releases cuyo título contenga estos términos.
+# Idempotente: crea el perfil si no existe, o añade los términos que falten.
+SONARR_IGNORED='["English Dub","Dub]","SUBFRENCH"]'
+SONARR_PROFILES=$(curl -s "http://localhost:8989/api/v3/releaseprofile" -H "X-Api-Key: $SONARR_KEY")
+SONARR_PROFILE_JSON=$(SONARR_IGNORED="$SONARR_IGNORED" python3 -c "
+import json, os, sys
+wanted = json.loads(os.environ['SONARR_IGNORED'])
+profiles = json.loads(sys.stdin.read() or '[]')
+p = next((p for p in profiles if not p.get('tags')), None)
+if p is None:
+    p = {'name': 'Bloquear dubs y SUBFRENCH', 'enabled': True, 'required': [], 'ignored': [], 'indexerId': 0, 'tags': []}
+p['ignored'] += [t for t in wanted if t not in p['ignored']]
+print(json.dumps(p))
+" <<< "$SONARR_PROFILES")
+SONARR_PROFILE_ID=$(python3 -c "import json,sys; print(json.loads(sys.argv[1]).get('id',''))" "$SONARR_PROFILE_JSON")
+if [[ -n "$SONARR_PROFILE_ID" ]]; then
+    curl -s -X PUT "http://localhost:8989/api/v3/releaseprofile/$SONARR_PROFILE_ID" \
+        -H "X-Api-Key: $SONARR_KEY" -H "Content-Type: application/json" \
+        -d "$SONARR_PROFILE_JSON" > /dev/null
+else
+    curl -s -X POST "http://localhost:8989/api/v3/releaseprofile" \
+        -H "X-Api-Key: $SONARR_KEY" -H "Content-Type: application/json" \
+        -d "$SONARR_PROFILE_JSON" > /dev/null
+fi
+echo "Restricciones de Sonarr aplicadas: $SONARR_IGNORED"
+
 if [[ -n "${TELEGRAM_BOT_TOKEN:-}" && -n "${TELEGRAM_CHAT_ID:-}" ]]; then
     echo "Configurando notificaciones de Telegram..."
     "$DIR/telegram-setup.sh"
