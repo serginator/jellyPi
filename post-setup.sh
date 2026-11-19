@@ -65,7 +65,9 @@ fi
 echo "Configurando restricciones de release en Sonarr..."
 # Perfil global (sin tags): rechaza releases cuyo título contenga estos términos.
 # Idempotente: crea el perfil si no existe, o añade los términos que falten.
-SONARR_IGNORED='["English Dub","Dub]","SUBFRENCH"]'
+# AV1: la Pi 4 no decodifica AV1 por hardware y transcodificarlo por CPU va por
+# debajo de tiempo real (~0,97x) -> saltos. Se prefieren releases H.264/HEVC.
+SONARR_IGNORED='["English Dub","Dub]","SUBFRENCH","AV1"]'
 SONARR_PROFILES=$(curl -s "http://localhost:8989/api/v3/releaseprofile" -H "X-Api-Key: $SONARR_KEY")
 SONARR_PROFILE_JSON=$(SONARR_IGNORED="$SONARR_IGNORED" python3 -c "
 import json, os, sys
