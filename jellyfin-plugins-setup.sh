@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fully automated setup for 2 Jellyfin plugins: File Transformator, SeerrFin.
+# Fully automated setup for 3 Jellyfin plugins: File Transformator, SeerrFin,
+# Intro Skipper.
 # - Adds plugin repositories to Jellyfin
 # - Installs the plugins via API
 # - Pre-writes their configurations
@@ -39,7 +40,8 @@ log "Adding plugin repositories to Jellyfin..."
 REPOS_JSON='[
   {"Name":"Jellyfin Stable","Url":"https://repo.jellyfin.org/files/plugin/manifest.json","Enabled":true},
   {"Name":"File Transformator","Url":"https://www.iamparadox.dev/jellyfin/plugins/manifest.json","Enabled":true},
-  {"Name":"SeerrFin","Url":"https://raw.githubusercontent.com/varunaditya-plus/SeerrFin/main/manifest.json","Enabled":true}
+  {"Name":"SeerrFin","Url":"https://raw.githubusercontent.com/varunaditya-plus/SeerrFin/main/manifest.json","Enabled":true},
+  {"Name":"Intro Skipper","Url":"https://intro-skipper.org/manifest.json","Enabled":true}
 ]'
 
 curl -sf -X POST "$JF_URL/Repositories" \
@@ -52,9 +54,12 @@ log "Repositories added."
 # ── 2. Install plugins via API ─────────────────────────────────────────────────
 log "Installing plugins..."
 
+# Format: "<manifest url>|<plugin name>". Several manifests list many plugins
+# (iamparadox.dev has six), so always pick by name, never "the first one".
 MANIFEST_URLS=(
-    "https://www.iamparadox.dev/jellyfin/plugins/manifest.json"
-    "https://raw.githubusercontent.com/varunaditya-plus/SeerrFin/main/manifest.json"
+    "https://www.iamparadox.dev/jellyfin/plugins/manifest.json|File Transformation"
+    "https://raw.githubusercontent.com/varunaditya-plus/SeerrFin/main/manifest.json|SeerrFin"
+    "https://intro-skipper.org/manifest.json|Intro Skipper"
 )
 
 python3 - "${MANIFEST_URLS[@]}" <<PYEOF
@@ -67,10 +72,17 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-for manifest_url in sys.argv[1:]:
+# Some manifests depend on the Jellyfin version (intro-skipper.org reads it from
+# the User-Agent; without it, it redirects to GitHub) or refuse Python's default
+# User-Agent (iamparadox.dev answers 403). Ask like Jellyfin does.
+jf_version = json.loads(urllib.request.urlopen(f"{JF_URL}/System/Info/Public", timeout=15).read())["Version"]
+
+for arg in sys.argv[1:]:
+    manifest_url, _, want = arg.partition("|")
     try:
-        data = json.loads(urllib.request.urlopen(manifest_url, timeout=15).read())
-        pkg = data[0]
+        req = urllib.request.Request(manifest_url, headers={"User-Agent": f"Jellyfin-Server/{jf_version}"})
+        data = json.loads(urllib.request.urlopen(req, timeout=15).read())
+        pkg = next(p for p in data if p["name"] == want)
         name    = pkg["name"]
         guid    = pkg["guid"]
         version = pkg["versions"][0]["version"]

@@ -111,7 +111,7 @@ else
 fi
 
 if [[ -n "${JELLYFIN_API_KEY:-}" && -n "${TMDB_API_KEY:-}" ]]; then
-    echo "Configurando plugins de Jellyfin (SeerrFin, Moonbase, File Transformator)..."
+    echo "Configurando plugins de Jellyfin (SeerrFin, File Transformator, Intro Skipper)..."
     "$DIR/jellyfin-plugins-setup.sh"
 else
     echo "JELLYFIN_API_KEY o TMDB_API_KEY vacíos en .env, omito setup de plugins de Jellyfin."

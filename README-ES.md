@@ -325,20 +325,26 @@ Pluto TV, que no compite con ella.
 
 #### Plugins de Jellyfin
 
-Dos plugins amplían la interfaz de Jellyfin. Para instalarlos desde cero,
+Tres plugins amplían Jellyfin. Para instalarlos desde cero,
 añade `TMDB_API_KEY` a `.env` (clave gratuita en themoviedb.org) y ejecuta:
 
 ```bash
 ./jellyfin-plugins-setup.sh
 ```
 
-El script añade los repositorios, instala los dos plugins vía API, pre-escribe
+El script añade los repositorios, instala los tres plugins vía API, pre-escribe
 su configuración y reinicia Jellyfin. Todo automático, sin pasos manuales.
 
 | Plugin | Repositorio | Para qué sirve |
 |--------|-------------|----------------|
 | **File Transformator** | iamparadox.dev | Renombra/transforma ficheros de media |
 | **SeerrFin** | github.com/varunaditya-plus/SeerrFin | Integra Seerr en la UI de Jellyfin (búsqueda, peticiones, trending) |
+| **Intro Skipper** | intro-skipper.org | Detecta intros y créditos de las series y muestra el botón "Saltar" (requiere Jellyfin 12.0+; usa el ffmpeg de Jellyfin, ya incluido en la imagen) |
+
+Intro Skipper no necesita configuración. Analiza los episodios con la tarea
+programada **Detect and Analyze Media Segments** (Panel → Tareas programadas).
+El análisis lee y procesa el audio de cada episodio: con la librería entera es
+pesado para la Pi, así que conviene lanzarlo de noche y sin usar Jellyfin.
 
 ### Bazarr — `http://jellypi.local:6767`
 
