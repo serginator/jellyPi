@@ -134,4 +134,34 @@ log "Restarting Jellyfin so plugins load..."
 (cd "$DIR" && docker compose restart jellyfin)
 log "Jellyfin restarted."
 
+# ── 5. Intro Skipper: analysis at 03:00 ────────────────────────────────────────
+# The plugin analyzes the audio of every episode (heavy on the Pi's CPU and USB
+# disk). Its default is 00:00, the same time as RomM's nightly scan, so move it.
+# The task only exists once Jellyfin has loaded the plugin (~4 min after restart).
+log "Waiting for Jellyfin to come back (up to 10 min)..."
+for _ in $(seq 1 60); do
+    curl -sf -m 5 "$JF_URL/health" >/dev/null && break
+    sleep 10
+done
+
+JF_API_KEY="$JELLYFIN_API_KEY" python3 - <<'PYEOF'
+import json, os, sys, urllib.request
+
+H = {"Authorization": f'MediaBrowser Token="{os.environ["JF_API_KEY"]}"',
+     "Content-Type": "application/json"}
+
+def call(path, data=None, method="GET"):
+    req = urllib.request.Request("http://localhost:8096" + path, data=data, method=method, headers=H)
+    body = urllib.request.urlopen(req, timeout=15).read()
+    return json.loads(body) if body else None
+
+try:
+    task = next(t for t in call("/ScheduledTasks") if t["Name"] == "Detect and Analyze Media Segments")
+    trigger = [{"Type": "DailyTrigger", "TimeOfDayTicks": 3 * 3600 * 10**7}]
+    call(f"/ScheduledTasks/{task['Id']}/Triggers", json.dumps(trigger).encode(), "POST")
+    print("[plugins] Intro Skipper analysis scheduled daily at 03:00")
+except Exception as e:
+    print(f"[plugins] WARNING: could not move the Intro Skipper schedule: {e}", file=sys.stderr)
+PYEOF
+
 log "Done. All plugins installed and configured."

@@ -340,7 +340,9 @@ their configuration, and restarts Jellyfin. Fully automated, no manual steps.
 Intro Skipper needs no configuration. It analyzes episodes with the scheduled
 task **Detect and Analyze Media Segments** (Dashboard → Scheduled Tasks).
 The analysis reads and processes the audio of every episode: on the whole
-library it is heavy for the Pi, so run it at night and while Jellyfin is idle.
+library it is heavy for the Pi. The script moves its daily run to 03:00
+(the default, 00:00, collides with RomM's nightly scan). To run it by hand,
+do it while Jellyfin is idle.
 
 ### Bazarr — `http://jellypi.local:6767`
 
